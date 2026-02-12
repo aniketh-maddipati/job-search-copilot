@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+      "module": "commonjs",
+      "target": "es6",
+      "checkJs": true,
+      "allowJs": true
+    },
+    "include": [
+      "**/*.js",
+      "node_modules/@types/google-apps-script/**/*.d.ts"
+    ]
+  }

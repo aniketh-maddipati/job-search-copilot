@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #000; --border: #222; --text: #ededed; --mute: #666; --accent: #fff; }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+    .container { width: 100%; max-width: 400px; padding: 24px; border: 1px solid var(--border); border-radius: 8px; }
+    h1 { font-family: 'Geist Mono', monospace; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px; color: var(--mute); }
+    input { width: 100%; background: #0a0a0a; border: 1px solid var(--border); color: #fff; padding: 12px; font-family: 'Geist Mono', monospace; font-size: 12px; border-radius: 4px; box-sizing: border-box; margin-bottom: 16px; outline: none; }
+    input:focus { border-color: #444; }
+    button { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; font-family: 'Geist Mono', monospace; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; }
+    button:disabled { opacity: 0.2; cursor: not-allowed; }
+    .logs { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--mute); margin-top: 20px; line-height: 1.6; }
+    .view { display: none; }
+    .active { display: block; }
+    .link-group { margin-top: 24px; display: flex; flex-direction: column; gap: 8px; }
+    .link-group a { color: var(--text); text-decoration: none; font-size: 12px; font-family: 'Geist Mono', monospace; border-bottom: 1px solid var(--border); padding-bottom: 4px; width: fit-content; }
+    .link-group a:hover { color: var(--mute); border-color: var(--mute); }
+    .status-dot { color: #4ade80; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div id="viewAuth" class="view active">
+      <h1>Initialize // System</h1>
+      <input type="password" id="apiKey" placeholder="Enter Groq API Key (gsk_...)" oninput="checkInput()">
+      <button id="btnInit" disabled onclick="startBootstrap()">BOOTSTRAP SYSTEM</button>
+      <div class="logs">> standby_for_config</div>
+    </div>
+
+    <div id="viewRun" class="view">
+      <h1>Provisioning // In Progress</h1>
+      <div class="logs" id="terminal">
+        > configuring_script_properties...<br>
+        > creating_dashboard_structure...<br>
+        > initializing_llm_batch_25...
+      </div>
+    </div>
+
+    <div id="viewDone" class="view">
+      <h1>System // Operational</h1>
+      <div class="logs" id="finalStats"></div>
+      
+      <div class="link-group">
+        <a id="sheetLink" href="#" target="_blank">View Dashboard ↗</a>
+        <a href="https://script.google.com/home" target="_blank">Source Code ↗</a>
+        <a href="https://www.linkedin.com/in/anikethmaddipati/" target="_blank">Author // LinkedIn ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function checkInput() {
+      const val = document.getElementById('apiKey').value;
+      document.getElementById('btnInit').disabled = !val.startsWith('gsk_');
+    }
+
+    function startBootstrap() {
+      const key = document.getElementById('apiKey').value;
+      document.getElementById('viewAuth').classList.remove('active');
+      document.getElementById('viewRun').classList.add('active');
+
+      google.script.run
+        .withSuccessHandler(onComplete)
+        .withFailureHandler(onErr)
+        .saveAndInit(key);
+    }
+
+    function onComplete(res) {
+      document.getElementById('viewRun').classList.remove('active');
+      document.getElementById('viewDone').classList.add('active');
+      document.getElementById('sheetLink').href = res.sheetUrl;
+      document.getElementById('finalStats').innerHTML = `
+        > <span class="status-dot">●</span> success: system_ready<br>
+        > threads_indexed: ${res.stats.total}<br>
+        > triage_actions: ${res.stats.replyNeeded} pending
+      `;
+    }
+
+    function onErr(e) {
+      alert("Critical Error: " + e.message);
+      location.reload();
+    }
+  </script>
+</body>
+</html>
