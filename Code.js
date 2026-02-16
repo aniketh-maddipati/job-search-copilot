@@ -482,7 +482,7 @@ function sync() {
     // Telemetry
     TELEMETRY.sync(stats, runtime, llmCalls, cacheHits);
     
-    return stats;
+    return stats; // <--- MAKE SURE THIS RETURN IS HERE
     
   } catch (e) {
     LOG.error('sync', `Fatal: ${e.message}`);
@@ -491,10 +491,13 @@ function sync() {
   }
 }
 function doGet() {
+  // This serves the Setup.html file as a standalone web app
   return HtmlService.createTemplateFromFile('Setup').evaluate()
-    .setTitle('Job Co-Pilot | Init')
+    .setTitle('Job Co-Pilot | Setup')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
+
+
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -503,62 +506,45 @@ function doGet() {
 
 function saveAndInit(apiKey) {
   try {
-    // 1. Core Logic: Save the Key (Must Work)
+    // 1. Save Key
     PropertiesService.getScriptProperties().setProperty('GROQ_KEY', apiKey);
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     
-    // 2. Provision Dashboard
+    // 2. Build Dashboard (Frictionless: User doesn't have to create it)
     let dash = ss.getSheetByName(CORE.SHEETS.MAIN) || ss.insertSheet(CORE.SHEETS.MAIN);
     
-    // 3. UI Formatting (Wrapped in Try/Catch to prevent "Not a function" crashes)
-    try {
-      dash.getRange(1, 1, 1, CORE.HEADERS.length).setValues([CORE.HEADERS])
-          .setFontWeight('bold')
-          .setBackground('#1a1a1a')
-          .setFontColor('#ffffff');
-      
-      dash.setFrozenRows(1);
-      
-      // Attempt gridline hide - if it fails, the script continues anyway
-      if (typeof dash.setHideGridlines === 'function') {
-        dash.setHideGridlines(true);
-      } else {
-        ss.setHideGridlines(true);
-      }
-      
-      CORE.WIDTHS.forEach((w, i) => {
-        if (i < dash.getMaxColumns()) dash.setColumnWidth(i + 1, w);
-      });
-    } catch (uiErr) {
-      console.warn("Non-critical UI error ignored: " + uiErr.message);
-    }
+    // 3. Formatting (The "App" look)
+    dash.clear(); 
+    dash.getRange(1, 1, 1, CORE.HEADERS.length)
+        .setValues([CORE.HEADERS])
+        .setBackground(CORE.UI.COLORS.headerBg)
+        .setFontColor(CORE.UI.COLORS.headerFg)
+        .setFontWeight('bold');
+    dash.setFrozenRows(1);
+    CORE.WIDTHS.forEach((w, i) => dash.setColumnWidth(i + 1, w));
     
-     // 4. Provision Cache
-  if (!ss.getSheetByName(CORE.SHEETS.CACHE)) {
-    const cache = ss.insertSheet(CORE.SHEETS.CACHE);
-    cache.getRange(1, 1, 1, CORE.CACHE_COLS.length).setValues([CORE.CACHE_COLS]);
-    cache.hideSheet();
-  }
+    // 4. Automation & Cache Setup
+    if (!ss.getSheetByName(CORE.SHEETS.CACHE)) {
+      ss.insertSheet(CORE.SHEETS.CACHE).hideSheet();
+    }
+    createDailyTrigger();
 
-  // 5. Create daily trigger ← ADD THIS
-  createDailyTrigger();
-
-  // 6. Initial Sync (was step 5)
-  const stats = sync();
-
-  TELEMETRY.install(stats);
+    // 5. Run Initial Scan & Return Stats for the UI
+    const stats = sync();
     
     return { 
       success: true, 
-      stats: stats, 
+      stats: {
+        total: stats.total || 0,
+        opportunities: (stats.replyNeeded + stats.followUp) || 0,
+        saved: (stats.total * 2) // "2 mins saved per email" logic
+      },
       sheetUrl: ss.getUrl() + '#gid=' + dash.getSheetId() 
     };
   } catch (e) {
-    console.error('CRITICAL BOOTSTRAP ERROR: ' + e.message);
     throw new Error(e.message);
   }
 }
-
 function onOpen() {
   App.sheets.getUi().createMenu('📧 Job Co-Pilot')
     .addItem('🔄 Sync Now', 'sync')
@@ -579,10 +565,15 @@ function viewLogs() {
 }
 function showSetup() {
   const url = ScriptApp.getService().getUrl();
+  if (!url) {
+    SpreadsheetApp.getUi().alert("Deploy > New Deployment > Web App first.");
+    return;
+  }
+  // This auto-opens your beautiful setup page in a new tab
   const html = `<script>window.open("${url}", "_blank"); google.script.host.close();</script>`;
-  App.sheets.getUi().showModalDialog(HtmlService.createHtmlOutput(html), "Opening Setup...");
+  const output = HtmlService.createHtmlOutput(html).setHeight(50).setWidth(150);
+  SpreadsheetApp.getUi().showModalDialog(output, "Opening Setup...");
 }
-
 function debugSystem() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const key = PropertiesService.getScriptProperties().getProperty('GROQ_KEY');
