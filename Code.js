@@ -478,10 +478,7 @@ function sync() {
     
     const runtime = Date.now() - startTime;
     LOG.info('sync', `Complete in ${runtime}ms | Reply: ${stats.replyNeeded}, Follow: ${stats.followUp}, Wait: ${stats.waiting}`);
-    
-    // ADD THIS DEBUG LINE
-    console.log('TELEMETRY DEBUG:', { stats, runtime, llmCalls, cacheHits });
-    
+        
     // Telemetry
     TELEMETRY.sync(stats, runtime, llmCalls, cacheHits);
     
