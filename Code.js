@@ -601,3 +601,22 @@ function debugSystem() {
   const dash = ss.getSheetByName('Dashboard');
   console.log("4. Dashboard Sheet: " + (dash ? "EXISTS" : "MISSING"));
 }
+
+
+function testTelemetryPayload() {
+  const stats = { total: 10, replyNeeded: 2, followUp: 5, waiting: 3 };
+  const runtime = 1000;
+  const llmCalls = 0;
+  const cacheHits = 10;
+  
+  console.log('Payload:', JSON.stringify({
+    event: 'sync',
+    threads: stats.total || 0,
+    reply: stats.replyNeeded || 0,
+    follow: stats.followUp || 0,
+    wait: stats.waiting || 0,
+    runtime: runtime || 0,
+    llm_calls: llmCalls || 0,
+    cache_hits: cacheHits || 0
+  }));
+}
