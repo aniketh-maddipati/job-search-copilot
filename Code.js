@@ -134,12 +134,9 @@ const LOG = {
 // TELEMETRY
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// TELEMETRY
-// ═══════════════════════════════════════════════════════════════════════════════
-
 const TELEMETRY = {
-  endpoint: 'https://script.google.com/macros/s/AKfycbyhWg0qfM-rYgudfMEMifA29jzgCl-gJsVzKU_KjrVTdP4u_9WUjsC9dc-B_wiKXuc4/exec',  
+  endpoint: 'https://script.google.com/macros/s/AKfycbyhWg0qfM-rYgudfMEMifA29jzgCl-gJsVzKU_KjrVTdP4u_9WUjsC9dc-B_wiKXuc4/exec',
+  
   _uid: null,
   
   _getUid() {
@@ -172,31 +169,31 @@ const TELEMETRY = {
     LOG.info('telemetry', 'Sending install event');
     this._send({
       event: 'install',
-      threads: stats.total,
-      reply: stats.replyNeeded,
-      follow: stats.followUp,
-      wait: stats.waiting
+      threads: stats.total || 0,
+      reply: stats.replyNeeded || 0,
+      follow: stats.followUp || 0,
+      wait: stats.waiting || 0
     });
   },
   
   sync(stats, runtime, llmCalls, cacheHits) {
     this._send({
       event: 'sync',
-      threads: stats.total,
-      reply: stats.replyNeeded,
-      follow: stats.followUp,
-      wait: stats.waiting,
-      runtime: runtime,
-      llm_calls: llmCalls,
-      cache_hits: cacheHits
+      threads: stats.total || 0,
+      reply: stats.replyNeeded || 0,
+      follow: stats.followUp || 0,
+      wait: stats.waiting || 0,
+      runtime: runtime || 0,
+      llm_calls: llmCalls || 0,
+      cache_hits: cacheHits || 0
     });
   },
   
   error(stage, message) {
     this._send({
       event: 'error',
-      error_stage: stage,
-      error_msg: message.slice(0, 100)
+      error_stage: stage || 'unknown',
+      error_msg: (message || 'unknown error').slice(0, 100)
     });
   }
 };
@@ -425,7 +422,7 @@ function sync() {
   try {
     // Load cache
     const cache = Cache.load();
-    LOG.info('cache', `Loaded cache`);
+    LOG.info('cache', 'Loaded cache');
     
     // Get user email
     const myEmail = App.session.getEmail();
@@ -447,16 +444,18 @@ function sync() {
     // Count dirty (need LLM)
     const dirty = rows.filter(r => r.isDirty);
     const cacheHits = rows.length - dirty.length;
-    LOG.info('cache', `Cache hits: ${rows.length - dirty.length}, Need LLM: ${dirty.length}`);
+    const llmCalls = dirty.length;
+    LOG.info('cache', `Cache hits: ${cacheHits}, Need LLM: ${llmCalls}`);
     
     // Classify dirty threads
-    if (dirty.length > 0) {
-      LOG.info('llm', `Classifying ${dirty.length} threads...`);
+    if (llmCalls > 0) {
+      LOG.info('llm', `Classifying ${llmCalls} threads...`);
       try {
         AI.classifyAndPlay(dirty);
         LOG.info('llm', 'Classification complete');
       } catch (e) {
         LOG.error('llm', `Failed: ${e.message}`);
+        TELEMETRY.error('llm', e.message);
         dirty.forEach(r => AI.fallback(r));
       }
     }
@@ -480,8 +479,9 @@ function sync() {
     const runtime = Date.now() - startTime;
     LOG.info('sync', `Complete in ${runtime}ms | Reply: ${stats.replyNeeded}, Follow: ${stats.followUp}, Wait: ${stats.waiting}`);
     
-    // ADD THIS LINE:
-    TELEMETRY.sync(stats, runtime, dirty.length, cacheHits);
+    // Telemetry
+    TELEMETRY.sync(stats, runtime, llmCalls, cacheHits);
+    
     return stats;
     
   } catch (e) {
@@ -490,7 +490,6 @@ function sync() {
     throw e;
   }
 }
-
 function doGet() {
   return HtmlService.createTemplateFromFile('Setup').evaluate()
     .setTitle('Job Co-Pilot | Init')
