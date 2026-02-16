@@ -139,8 +139,7 @@ const LOG = {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const TELEMETRY = {
-  endpoint: 'https://script.google.com/macros/s/AKfycbzgOBOkYTO-RpUnTXsEpAGFQwkWTeHuHhKQMlUfI6ehLV1F8nvKomnQtRU9klRxG3Xd/exec',
-  
+  endpoint: 'https://script.google.com/macros/s/AKfycbyhWg0qfM-rYgudfMEMifA29jzgCl-gJsVzKU_KjrVTdP4u_9WUjsC9dc-B_wiKXuc4/exec',  
   _uid: null,
   
   _getUid() {
