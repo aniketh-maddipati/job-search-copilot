@@ -1,0 +1,14 @@
+# Local development files
+local/**
+node_modules/**
+package.json
+package-lock.json
+jsconfig.json
+README.md
+sync.sh
+.git/**
+.gitignore
+
+# Test files (run locally, not in Apps Script)
+*.test.js
+__tests__/**

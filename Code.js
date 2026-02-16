@@ -77,6 +77,125 @@ const ALL_HEADERS = [...CORE.HEADERS, ...USER_CONFIG.BLOCKS.map(b => b.label)];
 const ALL_WIDTHS = [...CORE.WIDTHS, ...USER_CONFIG.BLOCKS.map(b => b.width || 100)];
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// LOGGER (Event Log for Debugging)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const LOG = {
+  SHEET_NAME: '_log',
+  MAX_ROWS: 200,
+  
+  _sheet: null,
+  
+  _getSheet() {
+    if (this._sheet) return this._sheet;
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(this.SHEET_NAME);
+    if (!sheet) {
+      sheet = ss.insertSheet(this.SHEET_NAME);
+      sheet.getRange(1, 1, 1, 4).setValues([['Time', 'Level', 'Stage', 'Message']]);
+      sheet.setColumnWidth(1, 100);
+      sheet.setColumnWidth(2, 60);
+      sheet.setColumnWidth(3, 80);
+      sheet.setColumnWidth(4, 400);
+      sheet.hideSheet();
+    }
+    this._sheet = sheet;
+    return sheet;
+  },
+  
+  _write(level, stage, message) {
+    try {
+      const sheet = this._getSheet();
+      const time = new Date().toLocaleTimeString();
+      sheet.appendRow([time, level, stage, message]);
+      
+      if (sheet.getLastRow() > this.MAX_ROWS) {
+        sheet.deleteRows(2, sheet.getLastRow() - this.MAX_ROWS);
+      }
+    } catch (e) {
+      console.log(`LOG FAILED: ${level} ${stage} ${message}`);
+    }
+  },
+  
+  info(stage, message) { this._write('INFO', stage, message); },
+  warn(stage, message) { this._write('WARN', stage, message); },
+  error(stage, message) { this._write('ERROR', stage, message); },
+  
+  clear() {
+    const sheet = this._getSheet();
+    if (sheet.getLastRow() > 1) {
+      sheet.deleteRows(2, sheet.getLastRow() - 1);
+    }
+  }
+};
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TELEMETRY
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const TELEMETRY = {
+  endpoint: 'https://script.google.com/macros/s/AKfycbzgOBOkYTO-RpUnTXsEpAGFQwkWTeHuHhKQMlUfI6ehLV1F8nvKomnQtRU9klRxG3Xd/exec',
+  
+  _uid: null,
+  
+  _getUid() {
+    if (this._uid) return this._uid;
+    const id = SpreadsheetApp.getActiveSpreadsheet().getId();
+    const hash = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, id + 'copilot');
+    this._uid = hash.map(b => ((b + 128) % 256).toString(16).padStart(2, '0')).join('').slice(0, 12);
+    return this._uid;
+  },
+  
+  _send(data) {
+    try {
+      UrlFetchApp.fetch(this.endpoint, {
+        method: 'post',
+        contentType: 'application/json',
+        payload: JSON.stringify({
+          ts: new Date().toISOString(),
+          uid: this._getUid(),
+          v: CORE.VERSION,
+          ...data
+        }),
+        muteHttpExceptions: true
+      });
+    } catch (e) {
+      // Silent fail — telemetry should never break the app
+      console.log('Telemetry failed:', e.message);
+    }
+  },
+  
+  install(stats) {
+    LOG.info('telemetry', 'Sending install event');
+    this._send({
+      event: 'install',
+      threads: stats.total,
+      reply: stats.replyNeeded
+    });
+  },
+  
+  sync(stats, runtime) {
+    this._send({
+      event: 'sync',
+      threads: stats.total,
+      reply: stats.replyNeeded,
+      follow: stats.followUp,
+      wait: stats.waiting,
+      runtime: runtime
+    });
+  },
+  
+  error(stage, message) {
+    this._send({
+      event: 'error',
+      error: `${stage}: ${message.slice(0, 100)}`
+    });
+  }
+};
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // ADAPTERS & UTILS
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -111,20 +230,6 @@ const App = {
     }),
   }
 };
-
-const Log = (() => {
-  const emit = (lvl, tag, msg, data) => {
-    const t = new Date().toISOString().slice(11, 19);
-    let out = `[${t}] [${tag}] ${msg}`;
-    if (data != null) out += '\n   ' + JSON.stringify(data);
-    console.log(out);
-  };
-  return {
-    info: (tag, msg, data) => emit('INFO', tag, msg, data),
-    warn: (tag, msg, data) => emit('WARN', tag, msg, data),
-    error: (tag, msg, data) => emit('ERROR', tag, msg, data),
-  };
-})();
 
 const Security = {
   stripPII: (s) => !s ? '' : s.replace(/[\w.-]+@[\w.-]+\.\w+/g, '[email]').replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '[phone]'),
@@ -276,26 +381,108 @@ function renderStyle(sheet, rows, count) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// TRIGGERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function createDailyTrigger() {
+  // Remove existing sync triggers
+  ScriptApp.getProjectTriggers().forEach(t => {
+    if (t.getHandlerFunction() === 'sync') {
+      ScriptApp.deleteTrigger(t);
+      LOG.info('trigger', 'Removed old trigger');
+    }
+  });
+  
+  // Create new daily trigger at 6am
+  ScriptApp.newTrigger('sync')
+    .timeBased()
+    .everyDays(1)
+    .atHour(6)
+    .create();
+  
+  LOG.info('trigger', 'Created daily trigger for 6am');
+}
+
+function removeTriggers() {
+  ScriptApp.getProjectTriggers().forEach(t => ScriptApp.deleteTrigger(t));
+  LOG.info('trigger', 'All triggers removed');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // ORCHESTRATION & BOOTSTRAP
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function sync() {
-  const cache = Cache.load();
-  const myEmail = App.session.getEmail();
-  const threads = App.gmail.search('in:sent', 0, USER_CONFIG.LOOKBACK);
-  const rows = threads.map(t => Email.parse(t, cache, myEmail));
+  const startTime = Date.now();
+  LOG.info('sync', 'Starting sync');
   
-  rows.forEach(r => {
-    r.status = Status.compute(r);
-    if (!r.isDirty && r.cached) Object.assign(r, r.cached);
-  });
-  
-  const dirty = rows.filter(r => r.isDirty);
-  if (dirty.length) AI.classifyAndPlay(dirty);
-  
-  Cache.save(rows);
-  renderTable(rows);
-  return { total: rows.length, replyNeeded: rows.filter(r => r.status.label === 'Reply Needed').length };
+  try {
+    // Load cache
+    const cache = Cache.load();
+    LOG.info('cache', `Loaded cache`);
+    
+    // Get user email
+    const myEmail = App.session.getEmail();
+    LOG.info('gmail', `User: ${myEmail.slice(0, 3)}***`);
+    
+    // Search threads
+    const threads = App.gmail.search('in:sent', 0, USER_CONFIG.LOOKBACK);
+    LOG.info('gmail', `Found ${threads.length} sent threads`);
+    
+    // Parse threads
+    const rows = threads.map(t => Email.parse(t, cache, myEmail));
+    
+    // Compute status
+    rows.forEach(r => {
+      r.status = Status.compute(r);
+      if (!r.isDirty && r.cached) Object.assign(r, r.cached);
+    });
+    
+    // Count dirty (need LLM)
+    const dirty = rows.filter(r => r.isDirty);
+    LOG.info('cache', `Cache hits: ${rows.length - dirty.length}, Need LLM: ${dirty.length}`);
+    
+    // Classify dirty threads
+    if (dirty.length > 0) {
+      LOG.info('llm', `Classifying ${dirty.length} threads...`);
+      try {
+        AI.classifyAndPlay(dirty);
+        LOG.info('llm', 'Classification complete');
+      } catch (e) {
+        LOG.error('llm', `Failed: ${e.message}`);
+        dirty.forEach(r => AI.fallback(r));
+      }
+    }
+    
+    // Save cache
+    Cache.save(rows);
+    LOG.info('cache', 'Cache saved');
+    
+    // Render
+    renderTable(rows);
+    LOG.info('render', `Wrote ${rows.length} rows to Dashboard`);
+    
+    // Stats
+    const stats = {
+      total: rows.length,
+      replyNeeded: rows.filter(r => r.status.label === 'Reply Needed').length,
+      followUp: rows.filter(r => r.status.label === 'Follow Up').length,
+      waiting: rows.filter(r => r.status.label === 'Waiting').length
+    };
+    
+    const runtime = Date.now() - startTime;
+    LOG.info('sync', `Complete in ${runtime}ms | Reply: ${stats.replyNeeded}, Follow: ${stats.followUp}, Wait: ${stats.waiting}`);
+    
+    // ADD THIS LINE:
+TELEMETRY.sync(stats, runtime);
+
+    return stats;
+    
+  } catch (e) {
+    LOG.error('sync', `Fatal: ${e.message}`);
+    TELEMETRY.error('sync', e.message);
+    throw e;
+  }
 }
 
 function doGet() {
@@ -341,15 +528,20 @@ function saveAndInit(apiKey) {
       console.warn("Non-critical UI error ignored: " + uiErr.message);
     }
     
-    // 4. Provision Cache
-    if (!ss.getSheetByName(CORE.SHEETS.CACHE)) {
-      const cache = ss.insertSheet(CORE.SHEETS.CACHE);
-      cache.getRange(1, 1, 1, CORE.CACHE_COLS.length).setValues([CORE.CACHE_COLS]);
-      cache.hideSheet();
-    }
-    
-    // 5. Initial Sync
-    const stats = sync(); 
+     // 4. Provision Cache
+  if (!ss.getSheetByName(CORE.SHEETS.CACHE)) {
+    const cache = ss.insertSheet(CORE.SHEETS.CACHE);
+    cache.getRange(1, 1, 1, CORE.CACHE_COLS.length).setValues([CORE.CACHE_COLS]);
+    cache.hideSheet();
+  }
+
+  // 5. Create daily trigger ← ADD THIS
+  createDailyTrigger();
+
+  // 6. Initial Sync (was step 5)
+  const stats = sync();
+
+  TELEMETRY.install(stats);
     
     return { 
       success: true, 
@@ -365,9 +557,21 @@ function saveAndInit(apiKey) {
 function onOpen() {
   App.sheets.getUi().createMenu('📧 Job Co-Pilot')
     .addItem('🔄 Sync Now', 'sync')
-    .addItem('⚙️ Setup', 'showSetup').addToUi();
+    .addItem('📋 View Logs', 'viewLogs')
+    .addItem('⚙️ Setup', 'showSetup')
+    .addToUi();
 }
 
+function viewLogs() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet = ss.getSheetByName('_log');
+  if (logSheet) {
+    logSheet.showSheet();
+    ss.setActiveSheet(logSheet);
+  } else {
+    SpreadsheetApp.getUi().alert('No logs yet. Run a sync first.');
+  }
+}
 function showSetup() {
   const url = ScriptApp.getService().getUrl();
   const html = `<script>window.open("${url}", "_blank"); google.script.host.close();</script>`;

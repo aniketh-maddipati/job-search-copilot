@@ -1,0 +1,11 @@
+{
+  "groq": {
+    "choices": [
+      {
+        "message": {
+          "content": "[{\"category\":\"JOB\",\"isJob\":true,\"play\":\"Reply today—they asked for availability. Suggest 2-3 specific times.\",\"draft\":\"Thanks for reaching out! I'm very interested in the role. I'm available Tuesday 2-4pm or Wednesday morning. Would either work?\"},{\"category\":\"JOB\",\"isJob\":true,\"play\":\"Follow up—11 days since you wrote. Reference something specific about the role.\",\"draft\":\"Hi! Wanted to check in on my application. I'm particularly excited about the design systems work. Any updates?\"},{\"category\":\"NETWORKING\",\"isJob\":false,\"play\":\"Confirm the meeting—they proposed a time.\",\"draft\":\"Tuesday at 2pm works perfectly! Looking forward to it. Should I come to your office or meet virtually?\"},{\"category\":\"JOB\",\"isJob\":true,\"play\":\"Wait—sent 3 days ago. Follow up after day 5 if no response.\",\"draft\":\"\"},{\"category\":\"JOB\",\"isJob\":true,\"play\":\"Reply ASAP—they want to schedule a final round. Share 3-4 time slots.\",\"draft\":\"That's great to hear! I'm available Monday 10am-2pm, Tuesday after 3pm, or Thursday all day. Let me know what works best!\"}]"
+        }
+      }
+    ]
+  }
+}
