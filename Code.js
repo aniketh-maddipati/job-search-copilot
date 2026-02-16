@@ -564,16 +564,13 @@ function viewLogs() {
   }
 }
 function showSetup() {
-  const url = ScriptApp.getService().getUrl();
-  if (!url) {
-    SpreadsheetApp.getUi().alert("Deploy > New Deployment > Web App first.");
-    return;
-  }
-  // This auto-opens your beautiful setup page in a new tab
-  const html = `<script>window.open("${url}", "_blank"); google.script.host.close();</script>`;
-  const output = HtmlService.createHtmlOutput(html).setHeight(50).setWidth(150);
-  SpreadsheetApp.getUi().showModalDialog(output, "Opening Setup...");
+  const html = HtmlService.createTemplateFromFile('Setup')
+    .evaluate()
+    .setWidth(450)
+    .setHeight(500);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Job Co-Pilot Setup');
 }
+
 function debugSystem() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const key = PropertiesService.getScriptProperties().getProperty('GROQ_KEY');

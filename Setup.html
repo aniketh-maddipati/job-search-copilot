@@ -6,85 +6,517 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    :root { --bg: #000; --border: #222; --text: #ededed; --mute: #666; --accent: #fff; }
-    body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
-    .container { width: 100%; max-width: 400px; padding: 24px; border: 1px solid var(--border); border-radius: 8px; }
-    h1 { font-family: 'Geist Mono', monospace; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px; color: var(--mute); }
-    input { width: 100%; background: #0a0a0a; border: 1px solid var(--border); color: #fff; padding: 12px; font-family: 'Geist Mono', monospace; font-size: 12px; border-radius: 4px; box-sizing: border-box; margin-bottom: 16px; outline: none; }
+    :root { 
+      --bg: #000; 
+      --border: #222; 
+      --text: #ededed; 
+      --mute: #666; 
+      --accent: #fff;
+      --success: #4ade80;
+      --warning: #fbbf24;
+    }
+    
+    * { box-sizing: border-box; }
+    
+    body { 
+      background: var(--bg); 
+      color: var(--text); 
+      font-family: 'Inter', sans-serif; 
+      margin: 0; 
+      padding: 24px;
+      min-height: 100vh;
+    }
+    
+    .container { 
+      width: 100%; 
+      max-width: 400px; 
+      margin: 0 auto;
+    }
+    
+    h1 { 
+      font-family: 'Geist Mono', monospace; 
+      font-size: 12px; 
+      text-transform: uppercase; 
+      letter-spacing: 0.15em; 
+      margin-bottom: 8px; 
+      color: var(--mute); 
+    }
+    
+    h2 {
+      font-family: 'Inter', sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 24px 0;
+      color: var(--text);
+    }
+    
+    .subtitle {
+      font-size: 13px;
+      color: var(--mute);
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+    
+    input { 
+      width: 100%; 
+      background: #0a0a0a; 
+      border: 1px solid var(--border); 
+      color: #fff; 
+      padding: 14px 12px; 
+      font-family: 'Geist Mono', monospace; 
+      font-size: 13px; 
+      border-radius: 6px; 
+      margin-bottom: 12px; 
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    
     input:focus { border-color: #444; }
-    button { width: 100%; background: var(--accent); color: #000; border: none; padding: 12px; font-family: 'Geist Mono', monospace; font-size: 12px; font-weight: 600; border-radius: 4px; cursor: pointer; transition: opacity 0.2s; }
-    button:disabled { opacity: 0.2; cursor: not-allowed; }
-    .logs { font-family: 'Geist Mono', monospace; font-size: 11px; color: var(--mute); margin-top: 20px; line-height: 1.6; }
+    input.valid { border-color: var(--success); }
+    
+    .input-hint {
+      font-size: 11px;
+      color: var(--mute);
+      margin-bottom: 20px;
+    }
+    
+    .input-hint a {
+      color: var(--text);
+      text-decoration: underline;
+    }
+    
+    button { 
+      width: 100%; 
+      background: var(--accent); 
+      color: #000; 
+      border: none; 
+      padding: 14px; 
+      font-family: 'Geist Mono', monospace; 
+      font-size: 12px; 
+      font-weight: 600; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    button:hover:not(:disabled) { 
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    
+    button:disabled { 
+      opacity: 0.2; 
+      cursor: not-allowed; 
+      transform: none;
+    }
+    
     .view { display: none; }
     .active { display: block; }
-    .link-group { margin-top: 24px; display: flex; flex-direction: column; gap: 8px; }
-    .link-group a { color: var(--text); text-decoration: none; font-size: 12px; font-family: 'Geist Mono', monospace; border-bottom: 1px solid var(--border); padding-bottom: 4px; width: fit-content; }
-    .link-group a:hover { color: var(--mute); border-color: var(--mute); }
-    .status-dot { color: #4ade80; }
+    
+    /* Progress Steps */
+    .progress-container {
+      margin: 32px 0;
+    }
+    
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .step:last-child { border-bottom: none; }
+    
+    .step-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    
+    .step-icon.pending { color: var(--mute); }
+    .step-icon.running { color: var(--warning); }
+    .step-icon.done { color: var(--success); }
+    .step-icon.error { color: #ef4444; }
+    
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: var(--warning);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .step-content {
+      flex: 1;
+    }
+    
+    .step-title {
+      font-family: 'Geist Mono', monospace;
+      font-size: 12px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    
+    .step-detail {
+      font-size: 11px;
+      color: var(--mute);
+    }
+    
+    .step.pending .step-title { color: var(--mute); }
+    
+    /* Success State */
+    .success-header {
+      text-align: center;
+      padding: 20px 0;
+    }
+    
+    .success-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      color: #000;
+      font-size: 24px;
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 24px 0;
+    }
+    
+    .stat-card {
+      background: #0a0a0a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-family: 'Geist Mono', monospace;
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .stat-label {
+      font-size: 11px;
+      color: var(--mute);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .link-group { 
+      margin-top: 24px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 8px; 
+    }
+    
+    .link-group a { 
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text); 
+      text-decoration: none; 
+      font-size: 13px; 
+      font-family: 'Inter', sans-serif;
+      padding: 12px 16px;
+      background: #0a0a0a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    
+    .link-group a:hover { 
+      border-color: #444;
+      transform: translateX(2px);
+    }
+    
+    .link-group a span {
+      color: var(--mute);
+    }
+    
+    .next-sync {
+      text-align: center;
+      font-size: 11px;
+      color: var(--mute);
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    
+    /* Error State */
+    .error-box {
+      background: #1a0a0a;
+      border: 1px solid #ef4444;
+      border-radius: 6px;
+      padding: 16px;
+      margin-top: 20px;
+    }
+    
+    .error-box h3 {
+      color: #ef4444;
+      font-size: 12px;
+      margin: 0 0 8px 0;
+      font-family: 'Geist Mono', monospace;
+    }
+    
+    .error-box p {
+      color: var(--mute);
+      font-size: 12px;
+      margin: 0;
+      line-height: 1.5;
+    }
+    
+    .retry-btn {
+      margin-top: 16px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    
+    .retry-btn:hover:not(:disabled) {
+      border-color: #444;
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
+    
+    <!-- STEP 1: API Key Input -->
     <div id="viewAuth" class="view active">
-      <h1>Initialize // System</h1>
-      <input type="password" id="apiKey" placeholder="Enter Groq API Key (gsk_...)" oninput="checkInput()">
-      <button id="btnInit" disabled onclick="startBootstrap()">BOOTSTRAP SYSTEM</button>
-      <div class="logs">> standby_for_config</div>
+      <h1>Job Co-Pilot</h1>
+      <h2>Connect your AI</h2>
+      <p class="subtitle">Paste your Groq API key to enable AI-powered email classification and draft generation.</p>
+      
+      <input 
+        type="password" 
+        id="apiKey" 
+        placeholder="gsk_..." 
+        oninput="checkInput()"
+        autocomplete="off"
+      >
+      <p class="input-hint">
+        Don't have a key? <a href="https://console.groq.com/keys" target="_blank">Get one free →</a>
+      </p>
+      
+      <button id="btnInit" disabled onclick="startBootstrap()">
+        Initialize System
+      </button>
     </div>
 
+    <!-- STEP 2: Progress -->
     <div id="viewRun" class="view">
-      <h1>Provisioning // In Progress</h1>
-      <div class="logs" id="terminal">
-        > configuring_script_properties...<br>
-        > creating_dashboard_structure...<br>
-        > initializing_llm_batch_25...
+      <h1>Job Co-Pilot</h1>
+      <h2>Setting up...</h2>
+      
+      <div class="progress-container">
+        <div class="step" id="step1">
+          <div class="step-icon pending">○</div>
+          <div class="step-content">
+            <div class="step-title">Saving API key</div>
+            <div class="step-detail">Storing in script properties</div>
+          </div>
+        </div>
+        
+        <div class="step" id="step2">
+          <div class="step-icon pending">○</div>
+          <div class="step-content">
+            <div class="step-title">Creating Dashboard</div>
+            <div class="step-detail">Building your triage view</div>
+          </div>
+        </div>
+        
+        <div class="step" id="step3">
+          <div class="step-icon pending">○</div>
+          <div class="step-content">
+            <div class="step-title">Scanning Gmail</div>
+            <div class="step-detail">Reading last 50 sent emails</div>
+          </div>
+        </div>
+        
+        <div class="step" id="step4">
+          <div class="step-icon pending">○</div>
+          <div class="step-content">
+            <div class="step-title">Classifying threads</div>
+            <div class="step-detail">AI analyzing your emails</div>
+          </div>
+        </div>
+        
+        <div class="step" id="step5">
+          <div class="step-icon pending">○</div>
+          <div class="step-content">
+            <div class="step-title">Setting daily trigger</div>
+            <div class="step-detail">Runs automatically at 6am</div>
+          </div>
+        </div>
       </div>
     </div>
 
+    <!-- STEP 3: Success -->
     <div id="viewDone" class="view">
-      <h1>System // Operational</h1>
-      <div class="logs" id="finalStats"></div>
+      <div class="success-header">
+        <div class="success-icon">✓</div>
+        <h1>Job Co-Pilot</h1>
+        <h2>You're all set!</h2>
+      </div>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="statThreads">0</div>
+          <div class="stat-label">Threads</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statActions">0</div>
+          <div class="stat-label">Need Action</div>
+        </div>
+      </div>
       
       <div class="link-group">
-        <a id="sheetLink" href="#" target="_blank">View Dashboard ↗</a>
-        <a href="https://script.google.com/home" target="_blank">Source Code ↗</a>
-        <a href="https://www.linkedin.com/in/anikethmaddipati/" target="_blank">Author // LinkedIn ↗</a>
+        <a id="sheetLink" href="#" target="_blank">
+          Open Dashboard
+          <span>→</span>
+        </a>
+        <a href="#" onclick="google.script.host.close(); return false;">
+          Close Setup
+          <span>×</span>
+        </a>
       </div>
+      
+      <p class="next-sync">
+        ⏰ Next automatic sync: 6:00 AM tomorrow
+      </p>
     </div>
+
+    <!-- Error State -->
+    <div id="viewError" class="view">
+      <h1>Job Co-Pilot</h1>
+      <h2>Setup failed</h2>
+      
+      <div class="error-box">
+        <h3>Error</h3>
+        <p id="errorMessage">Something went wrong.</p>
+      </div>
+      
+      <button class="retry-btn" onclick="location.reload()">
+        Try Again
+      </button>
+    </div>
+    
   </div>
 
   <script>
+    // Check API key format
     function checkInput() {
-      const val = document.getElementById('apiKey').value;
-      document.getElementById('btnInit').disabled = !val.startsWith('gsk_');
+      const input = document.getElementById('apiKey');
+      const val = input.value;
+      const isValid = val.startsWith('gsk_') && val.length > 20;
+      
+      document.getElementById('btnInit').disabled = !isValid;
+      input.classList.toggle('valid', isValid);
     }
 
+    // Start bootstrap process
     function startBootstrap() {
       const key = document.getElementById('apiKey').value;
+      
+      // Switch to progress view
       document.getElementById('viewAuth').classList.remove('active');
       document.getElementById('viewRun').classList.add('active');
-
+      
+      // Animate progress steps
+      animateProgress();
+      
+      // Call backend
       google.script.run
         .withSuccessHandler(onComplete)
-        .withFailureHandler(onErr)
+        .withFailureHandler(onError)
         .saveAndInit(key);
     }
 
-    function onComplete(res) {
-      document.getElementById('viewRun').classList.remove('active');
-      document.getElementById('viewDone').classList.add('active');
-      document.getElementById('sheetLink').href = res.sheetUrl;
-      document.getElementById('finalStats').innerHTML = `
-        > <span class="status-dot">●</span> success: system_ready<br>
-        > threads_indexed: ${res.stats.total}<br>
-        > triage_actions: ${res.stats.replyNeeded} pending
-      `;
+    // Animate progress steps
+    function animateProgress() {
+      const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
+      const delays = [0, 800, 2000, 4000, 8000];
+      
+      steps.forEach((stepId, index) => {
+        setTimeout(() => {
+          // Mark previous as done
+          if (index > 0) {
+            setStepState(steps[index - 1], 'done');
+          }
+          // Mark current as running
+          setStepState(stepId, 'running');
+        }, delays[index]);
+      });
     }
 
-    function onErr(e) {
-      alert("Critical Error: " + e.message);
-      location.reload();
+    // Set step state
+    function setStepState(stepId, state) {
+      const step = document.getElementById(stepId);
+      const icon = step.querySelector('.step-icon');
+      
+      step.classList.remove('pending');
+      icon.classList.remove('pending', 'running', 'done', 'error');
+      icon.classList.add(state);
+      
+      switch(state) {
+        case 'running':
+          icon.innerHTML = '<div class="spinner"></div>';
+          break;
+        case 'done':
+          icon.innerHTML = '✓';
+          break;
+        case 'error':
+          icon.innerHTML = '✕';
+          break;
+        default:
+          icon.innerHTML = '○';
+      }
+    }
+
+    // On success
+    function onComplete(res) {
+      // Mark all steps as done
+      ['step1', 'step2', 'step3', 'step4', 'step5'].forEach(s => setStepState(s, 'done'));
+      
+      // Short delay then show success
+      setTimeout(() => {
+        document.getElementById('viewRun').classList.remove('active');
+        document.getElementById('viewDone').classList.add('active');
+        
+        // Populate stats
+        document.getElementById('statThreads').textContent = res.stats.total || 0;
+        document.getElementById('statActions').textContent = res.stats.replyNeeded || 0;
+        document.getElementById('sheetLink').href = res.sheetUrl;
+      }, 500);
+    }
+
+    // On error
+    function onError(e) {
+      document.getElementById('viewRun').classList.remove('active');
+      document.getElementById('viewError').classList.add('active');
+      document.getElementById('errorMessage').textContent = e.message || 'Unknown error occurred.';
     }
   </script>
 </body>
