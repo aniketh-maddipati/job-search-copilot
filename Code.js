@@ -134,6 +134,10 @@ const LOG = {
 // TELEMETRY
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// TELEMETRY
+// ═══════════════════════════════════════════════════════════════════════════════
+
 const TELEMETRY = {
   endpoint: 'https://script.google.com/macros/s/AKfycbzgOBOkYTO-RpUnTXsEpAGFQwkWTeHuHhKQMlUfI6ehLV1F8nvKomnQtRU9klRxG3Xd/exec',
   
@@ -161,7 +165,6 @@ const TELEMETRY = {
         muteHttpExceptions: true
       });
     } catch (e) {
-      // Silent fail — telemetry should never break the app
       console.log('Telemetry failed:', e.message);
     }
   },
@@ -171,29 +174,33 @@ const TELEMETRY = {
     this._send({
       event: 'install',
       threads: stats.total,
-      reply: stats.replyNeeded
+      reply: stats.replyNeeded,
+      follow: stats.followUp,
+      wait: stats.waiting
     });
   },
   
-  sync(stats, runtime) {
+  sync(stats, runtime, llmCalls, cacheHits) {
     this._send({
       event: 'sync',
       threads: stats.total,
       reply: stats.replyNeeded,
       follow: stats.followUp,
       wait: stats.waiting,
-      runtime: runtime
+      runtime: runtime,
+      llm_calls: llmCalls,
+      cache_hits: cacheHits
     });
   },
   
   error(stage, message) {
     this._send({
       event: 'error',
-      error: `${stage}: ${message.slice(0, 100)}`
+      error_stage: stage,
+      error_msg: message.slice(0, 100)
     });
   }
 };
-
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ADAPTERS & UTILS
@@ -440,6 +447,7 @@ function sync() {
     
     // Count dirty (need LLM)
     const dirty = rows.filter(r => r.isDirty);
+    const cacheHits = rows.length - dirty.length;
     LOG.info('cache', `Cache hits: ${rows.length - dirty.length}, Need LLM: ${dirty.length}`);
     
     // Classify dirty threads
@@ -474,8 +482,7 @@ function sync() {
     LOG.info('sync', `Complete in ${runtime}ms | Reply: ${stats.replyNeeded}, Follow: ${stats.followUp}, Wait: ${stats.waiting}`);
     
     // ADD THIS LINE:
-TELEMETRY.sync(stats, runtime);
-
+    TELEMETRY.sync(stats, runtime, dirty.length, cacheHits);
     return stats;
     
   } catch (e) {
