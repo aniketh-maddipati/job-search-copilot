@@ -665,24 +665,26 @@ function saveAndInit(apiKey) {
     throw new Error(e.message);
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MENU
+// ═══════════════════════════════════════════════════════════════════════════════
+
 function onOpen() {
-  App.sheets.getUi().createMenu('📧 Job Co-Pilot')
+  const ui = App.sheets.getUi();
+  if (!ui) return;
+  
+  ui.createMenu('📧 Job Co-Pilot')
     .addItem('🔄 Sync Now', 'sync')
-    .addItem('📋 View Logs', 'viewLogs')
     .addItem('⚙️ Setup', 'showSetup')
+    .addSeparator()
+    .addSubMenu(ui.createMenu('🛠️ Debug')
+      .addItem('📋 Show Logs & Cache', 'showDebugSheets')
+      .addItem('🙈 Hide Logs & Cache', 'hideDebugSheets')
+      .addItem('🗑️ Clear Cache', 'clearCache'))
     .addToUi();
 }
 
-function viewLogs() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const logSheet = ss.getSheetByName('_log');
-  if (logSheet) {
-    logSheet.showSheet();
-    ss.setActiveSheet(logSheet);
-  } else {
-    SpreadsheetApp.getUi().alert('No logs yet. Run a sync first.');
-  }
-}
 function showSetup() {
   const html = HtmlService.createTemplateFromFile('Setup')
     .evaluate()
@@ -691,40 +693,79 @@ function showSetup() {
   SpreadsheetApp.getUi().showModalDialog(html, 'Job Co-Pilot Setup');
 }
 
-function debugSystem() {
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// UTILITY FUNCTIONS (Debug & Maintenance)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Clears the cache to force LLM re-classification on next sync
+ * Useful for testing or when classifications seem stale
+ */
+function clearCache() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const key = PropertiesService.getScriptProperties().getProperty('GROQ_KEY');
+  const cache = ss.getSheetByName(CORE.SHEETS.CACHE);
   
-  console.log("--- SYSTEM HEALTH CHECK ---");
-  console.log("1. Spreadsheet ID: " + ss.getId());
-  console.log("2. API Key Present: " + (key ? "YES (Ends in ..." + key.slice(-4) + ")" : "NO"));
-  
-  try {
-    const threads = GmailApp.search('in:sent', 0, 1);
-    console.log("3. Gmail Access: SUCCESS (Found " + threads.length + " threads)");
-  } catch (e) {
-    console.log("3. Gmail Access: FAILED - " + e.message);
+  if (!cache) {
+    SpreadsheetApp.getUi().alert('No cache found. Run Setup first.');
+    return;
   }
   
-  const dash = ss.getSheetByName('Dashboard');
-  console.log("4. Dashboard Sheet: " + (dash ? "EXISTS" : "MISSING"));
+  const rowCount = cache.getLastRow() - 1;
+  if (rowCount > 0) {
+    cache.deleteRows(2, rowCount);
+  }
+  
+  LOG.info('cache', 'Cache cleared manually');
+  SpreadsheetApp.getUi().alert(`✓ Cache cleared (${rowCount} entries removed).\n\nNext sync will re-classify all threads.`);
 }
 
-
-function testTelemetryPayload() {
-  const stats = { total: 10, replyNeeded: 2, followUp: 5, waiting: 3 };
-  const runtime = 1000;
-  const llmCalls = 0;
-  const cacheHits = 10;
+/**
+ * Shows all hidden sheets (_log, _cache) for debugging
+ */
+function showDebugSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let shown = [];
   
-  console.log('Payload:', JSON.stringify({
-    event: 'sync',
-    threads: stats.total || 0,
-    reply: stats.replyNeeded || 0,
-    follow: stats.followUp || 0,
-    wait: stats.waiting || 0,
-    runtime: runtime || 0,
-    llm_calls: llmCalls || 0,
-    cache_hits: cacheHits || 0
-  }));
+  const logSheet = ss.getSheetByName('_log');
+  if (logSheet) {
+    logSheet.showSheet();
+    shown.push('_log');
+  }
+  
+  const cacheSheet = ss.getSheetByName('_cache');
+  if (cacheSheet) {
+    cacheSheet.showSheet();
+    shown.push('_cache');
+  }
+  
+  if (shown.length > 0) {
+    SpreadsheetApp.getUi().alert(`✓ Showing: ${shown.join(', ')}`);
+  } else {
+    SpreadsheetApp.getUi().alert('No debug sheets found. Run Setup first.');
+  }
+}
+
+/**
+ * Hides debug sheets (_log, _cache) for cleaner view
+ */
+function hideDebugSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let hidden = [];
+  
+  const logSheet = ss.getSheetByName('_log');
+  if (logSheet) {
+    logSheet.hideSheet();
+    hidden.push('_log');
+  }
+  
+  const cacheSheet = ss.getSheetByName('_cache');
+  if (cacheSheet) {
+    cacheSheet.hideSheet();
+    hidden.push('_cache');
+  }
+  
+  if (hidden.length > 0) {
+    SpreadsheetApp.getUi().alert(`✓ Hidden: ${hidden.join(', ')}`);
+  }
 }
