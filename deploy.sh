@@ -91,29 +91,3 @@ echo ""
 echo "═══════════════════════════════════════"
 echo "✅ Deployed successfully!"
 echo "═══════════════════════════════════════"
-```
-
----
-
-## Logic
-
-| Situation | What Happens |
-|-----------|--------------|
-| `LOCAL = REMOTE` | Already synced, just push to clasp |
-| `LOCAL = BASE` | We're behind, pull first |
-| `REMOTE = BASE` | We're ahead, just push |
-| Neither | Diverged, rebase then push |
-
----
-
-## Flow
-```
-1. Commit local changes (if any)
-2. Fetch remote (check only, no changes)
-3. Compare commits:
-   - Same? → Skip pull
-   - Behind? → Pull with rebase
-   - Ahead? → Skip pull
-   - Diverged? → Pull with rebase
-4. Push to GitHub
-5. Push to Apps Script
