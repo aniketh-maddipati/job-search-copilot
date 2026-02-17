@@ -12,3 +12,14 @@ sync.sh
 # Test files (run locally, not in Apps Script)
 *.test.js
 __tests__/**
+
+tests/**
+node_modules/**
+package.json
+package-lock.json
+jest.config.js
+deploy.sh
+README.md
+.git/**
+.gitignore
+.claspignore

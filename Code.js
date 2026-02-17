@@ -129,6 +129,11 @@ const LOG = {
   }
 };
 
+function trace(stage, data) {
+  const msg = typeof data === 'object' ? JSON.stringify(data) : String(data);
+  console.log(`[${stage}] ${msg}`);
+  LOG.info(stage, msg);
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TELEMETRY
@@ -299,28 +304,143 @@ const Status = {
 // ═══════════════════════════════════════════════════════════════════════════════
 // AI SERVICE
 // ═══════════════════════════════════════════════════════════════════════════════
-
 const AI = {
   classifyAndPlay(rows) {
+    trace('ai:start', { rowCount: rows.length });
+    
+    // Check 1: API key
     const key = App.props.get('GROQ_KEY');
-    if (!key) return rows.forEach(r => this.fallback(r));
-    
-    const threadData = rows.map(r => `Co: ${r.company} | Status: ${r.status.label} | Last: ${r.body}`).join('\n---\n');
-    const prompt = PROMPTS.classify.replace('${threads}', threadData);
-    
-    try {
-      const resp = App.fetch.post('https://api.groq.com/openai/v1/chat/completions', {
-        headers: { 'Authorization': `Bearer ${key}` },
-        payload: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }] })
-      });
-      const result = JSON.parse(JSON.parse(resp.getContentText()).choices[0].message.content.match(/\[[\s\S]*\]/)[0]);
-      rows.forEach((r, i) => { Object.assign(r, result[i]); });
-    } catch (e) {
+    if (!key) {
+      trace('ai:nokey', 'No API key found');
       rows.forEach(r => this.fallback(r));
+      return { success: false, reason: 'no_key' };
     }
+    trace('ai:key', `Key found: ...${key.slice(-4)}`);
+    
+    // Check 2: Build prompt
+    const threadData = rows.map(r => 
+      `Co: ${r.company} | Status: ${r.status.label} | Last: ${r.body}`
+    ).join('\n---\n');
+    const prompt = PROMPTS.classify.replace('${threads}', threadData);
+    trace('ai:prompt', { length: prompt.length, threads: rows.length });
+    
+    // Check 3: Call API
+    let resp;
+    try {
+      resp = UrlFetchApp.fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'post',
+        contentType: 'application/json',
+        headers: { 'Authorization': `Bearer ${key}` },
+        payload: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.2
+        }),
+        muteHttpExceptions: true
+      });
+    } catch (e) {
+      trace('ai:network', `Network error: ${e.message}`);
+      TELEMETRY.error('ai', `network: ${e.message}`);
+      rows.forEach(r => this.fallback(r));
+      return { success: false, reason: 'network', error: e.message };
+    }
+    
+    // Check 4: HTTP status
+    const code = resp.getResponseCode();
+    trace('ai:http', code);
+    
+    if (code === 401) {
+      trace('ai:auth', 'Invalid API key');
+      TELEMETRY.error('ai', 'auth_401');
+      rows.forEach(r => this.fallback(r));
+      return { success: false, reason: 'auth' };
+    }
+    
+    if (code === 429) {
+      trace('ai:ratelimit', 'Rate limited');
+      TELEMETRY.error('ai', 'rate_limit_429');
+      rows.forEach(r => this.fallback(r));
+      return { success: false, reason: 'rate_limit' };
+    }
+    
+    if (code !== 200) {
+      const errBody = resp.getContentText().slice(0, 200);
+      trace('ai:error', `HTTP ${code}: ${errBody}`);
+      TELEMETRY.error('ai', `http_${code}`);
+      rows.forEach(r => this.fallback(r));
+      return { success: false, reason: 'http_error', code: code };
+    }
+    
+    // Check 5: Parse response
+    let parsed;
+    try {
+      parsed = JSON.parse(resp.getContentText());
+    } catch (e) {
+      trace('ai:parse', `JSON parse failed: ${resp.getContentText().slice(0, 100)}`);
+      TELEMETRY.error('ai', 'json_parse');
+      rows.forEach(r => this.fallback(r));
+      return { success: false, reason: 'parse_error' };
+    }
+    
+    // Check 6: Extract content
+    if (!parsed.choices || !parsed.choices[0] || !parsed.choices[0].message) {
+      trace('ai:structure', 'Unexpected response structure');
+      TELEMETRY.error('ai', 'bad_structure');
+      rows.forEach(r => this.fallback(r));
+      return { success: false, reason: 'bad_structure' };
+    }
+    
+    const content = parsed.choices[0].message.content;
+    trace('ai:content', { length: content.length });
+    
+    // Check 7: Extract JSON array
+    const match = content.match(/\[[\s\S]*\]/);
+    if (!match) {
+      trace('ai:nojson', `No JSON array found: ${content.slice(0, 100)}`);
+      TELEMETRY.error('ai', 'no_json_array');
+      rows.forEach(r => this.fallback(r));
+      return { success: false, reason: 'no_json' };
+    }
+    
+    // Check 8: Parse result array
+    let results;
+    try {
+      results = JSON.parse(match[0]);
+    } catch (e) {
+      trace('ai:resultparse', `Result parse failed: ${match[0].slice(0, 100)}`);
+      TELEMETRY.error('ai', 'result_parse');
+      rows.forEach(r => this.fallback(r));
+      return { success: false, reason: 'result_parse_error' };
+    }
+    
+    // Check 9: Validate count
+    if (results.length !== rows.length) {
+      trace('ai:mismatch', { expected: rows.length, got: results.length });
+    }
+    
+    // Check 10: Apply results
+    let applied = 0;
+    rows.forEach((r, i) => {
+      if (results[i]) {
+        r.category = results[i].category || 'JOB';
+        r.isJob = results[i].isJob !== false;
+        r.play = results[i].play || '—';
+        r.draft = results[i].draft || '';
+        applied++;
+      } else {
+        this.fallback(r);
+      }
+    });
+    
+    trace('ai:done', { applied: applied, total: rows.length });
+    return { success: true, applied: applied };
   },
+  
   fallback(r) {
-    r.category = 'JOB'; r.isJob = true; r.play = 'Manual review needed'; r.draft = '';
+    r.category = 'JOB';
+    r.isJob = true;
+    r.play = '—';
+    r.draft = '';
   }
 };
 
