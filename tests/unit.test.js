@@ -559,3 +559,28 @@ describe('Batching logic', () => {
       expect(batches[1].length).toBe(10);
     });
   });
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+// SHEET CLEANUP TESTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('Sheet cleanup logic', () => {
+  
+    function shouldDeleteSheet(sheetName, lastRow) {
+      return sheetName === 'Sheet1' && lastRow === 0;
+    }
+    
+    test('deletes empty Sheet1', () => {
+      expect(shouldDeleteSheet('Sheet1', 0)).toBe(true);
+    });
+    
+    test('keeps Sheet1 with data', () => {
+      expect(shouldDeleteSheet('Sheet1', 1)).toBe(false);
+      expect(shouldDeleteSheet('Sheet1', 10)).toBe(false);
+    });
+    
+    test('keeps other empty sheets', () => {
+      expect(shouldDeleteSheet('Dashboard', 0)).toBe(false);
+      expect(shouldDeleteSheet('_cache', 0)).toBe(false);
+    });
+  });

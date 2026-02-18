@@ -652,6 +652,11 @@ function saveAndInit(apiKey) {
     // 2. Build Dashboard (Frictionless: User doesn't have to create it)
     let dash = ss.getSheetByName(CORE.SHEETS.MAIN) || ss.insertSheet(CORE.SHEETS.MAIN);
     
+    const sheet1 = ss.getSheetByName('Sheet1');
+    if (sheet1 && sheet1.getLastRow() === 0) {
+      ss.deleteSheet(sheet1);
+    }
+    s
     // 3. Formatting (The "App" look)
     dash.clear(); 
     dash.getRange(1, 1, 1, CORE.HEADERS.length)
