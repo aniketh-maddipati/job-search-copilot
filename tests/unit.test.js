@@ -108,6 +108,8 @@ const USER_CONFIG = {
       const result = Status.compute(row);
       expect(result.label).toBe('Waiting');
     });
+
+    
   });
   
   describe('Security.stripPII', () => {
@@ -230,8 +232,9 @@ const USER_CONFIG = {
     test('shows generic message for unknown reason', () => {
       const row = {};
       AI.fallback(row, 'unknown');
-      expect(row.play).toContain('AI unavailable');
+      expect(row.play).toContain('AI unavailable - sync again');
     });
+    
   });
 
   // ═══════════════════════════════════════════════════════════════════════════════

@@ -27,7 +27,7 @@ RULES:
 - Never use: "just following up", "circling back", "touching base"
 - Reply Needed: Address what they asked
 - Follow Up (5+ days): Add a hook, don't just bump
-- Waiting (<5 days): Return play: "—", draft: ""
+- Waiting (<5 days): play = "Wait for reply", draft = ""
 
 THREADS:
 \${threads}
@@ -35,7 +35,6 @@ THREADS:
 Return JSON array only.
 [{...},{...},...]`
 };
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -459,7 +458,7 @@ const AI = {
         r.play = '⚠️ Network error';
         break;
       default:
-        r.play = '—';
+        r.play = '⚠️ Sync again to classify';
     }
   }
 };
