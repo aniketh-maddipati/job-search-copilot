@@ -45,14 +45,29 @@ const USER_CONFIG = {
   
   // AI FALLBACK (copied from Code.js)
   const AI = {
-    fallback(r) {
+    fallback(r, reason) {
       r.category = 'JOB';
       r.isJob = true;
-      r.play = '—';
       r.draft = '';
+      
+      switch (reason) {
+        case 'no_key':
+          r.play = '⚠️ Add API key in Setup';
+          break;
+        case 'auth':
+          r.play = '⚠️ Invalid API key';
+          break;
+        case 'rate_limit':
+          r.play = '⚠️ Rate limited - try again later';
+          break;
+        case 'network':
+          r.play = '⚠️ Network error - check connection';
+          break;
+        default:
+          r.play = '⚠️ AI unavailable - sync again';
+      }
     }
   };
-  
   // ═══════════════════════════════════════════════════════════════════════════════
   // TESTS
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -172,26 +187,50 @@ const USER_CONFIG = {
   describe('AI.fallback', () => {
     test('sets category to JOB', () => {
       const row = {};
-      AI.fallback(row);
+      AI.fallback(row, 'error');
       expect(row.category).toBe('JOB');
     });
   
     test('sets isJob to true', () => {
       const row = {};
-      AI.fallback(row);
+      AI.fallback(row, 'error');
       expect(row.isJob).toBe(true);
-    });
-  
-    test('sets play to dash', () => {
-      const row = {};
-      AI.fallback(row);
-      expect(row.play).toBe('—');
     });
   
     test('sets draft to empty string', () => {
       const row = {};
-      AI.fallback(row);
+      AI.fallback(row, 'error');
       expect(row.draft).toBe('');
+    });
+  
+    test('shows no_key message', () => {
+      const row = {};
+      AI.fallback(row, 'no_key');
+      expect(row.play).toContain('Add API key');
+    });
+  
+    test('shows auth error message', () => {
+      const row = {};
+      AI.fallback(row, 'auth');
+      expect(row.play).toContain('Invalid API key');
+    });
+  
+    test('shows rate limit message', () => {
+      const row = {};
+      AI.fallback(row, 'rate_limit');
+      expect(row.play).toContain('Rate limited');
+    });
+  
+    test('shows network error message', () => {
+      const row = {};
+      AI.fallback(row, 'network');
+      expect(row.play).toContain('Network error');
+    });
+  
+    test('shows generic message for unknown reason', () => {
+      const row = {};
+      AI.fallback(row, 'unknown');
+      expect(row.play).toContain('AI unavailable');
     });
   });
 

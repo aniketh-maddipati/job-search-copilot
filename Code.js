@@ -312,7 +312,7 @@ const AI = {
     const key = App.props.get('GROQ_KEY');
     if (!key) {
       trace('ai:nokey', 'No API key found');
-      rows.forEach(r => this.fallback(r));
+      rows.forEach(r => this.fallback(r, 'no_key'));
       return { success: false, reason: 'no_key' };
     }
     trace('ai:key', `Key found: ...${key.slice(-4)}`);
@@ -341,7 +341,7 @@ const AI = {
     } catch (e) {
       trace('ai:network', `Network error: ${e.message}`);
       TELEMETRY.error('ai', `network: ${e.message}`);
-      rows.forEach(r => this.fallback(r));
+      rows.forEach(r => this.fallback(r, 'network'));
       return { success: false, reason: 'network', error: e.message };
     }
     
@@ -352,14 +352,14 @@ const AI = {
     if (code === 401) {
       trace('ai:auth', 'Invalid API key');
       TELEMETRY.error('ai', 'auth_401');
-      rows.forEach(r => this.fallback(r));
+      rows.forEach(r => this.fallback(r, 'auth'));
       return { success: false, reason: 'auth' };
     }
     
     if (code === 429) {
       trace('ai:ratelimit', 'Rate limited');
       TELEMETRY.error('ai', 'rate_limit_429');
-      rows.forEach(r => this.fallback(r));
+      rows.forEach(r => this.fallback(r, 'rate_limit'));
       return { success: false, reason: 'rate_limit' };
     }
     
@@ -367,7 +367,7 @@ const AI = {
       const errBody = resp.getContentText().slice(0, 200);
       trace('ai:error', `HTTP ${code}: ${errBody}`);
       TELEMETRY.error('ai', `http_${code}`);
-      rows.forEach(r => this.fallback(r));
+      rows.forEach(r => this.fallback(r, 'error'));
       return { success: false, reason: 'http_error', code: code };
     }
     
@@ -386,7 +386,7 @@ const AI = {
     if (!parsed.choices || !parsed.choices[0] || !parsed.choices[0].message) {
       trace('ai:structure', 'Unexpected response structure');
       TELEMETRY.error('ai', 'bad_structure');
-      rows.forEach(r => this.fallback(r));
+      rows.forEach(r => this.fallback(r, 'error'));
       return { success: false, reason: 'bad_structure' };
     }
     
@@ -398,7 +398,6 @@ const AI = {
     if (!match) {
       trace('ai:nojson', `No JSON array found: ${content.slice(0, 100)}`);
       TELEMETRY.error('ai', 'no_json_array');
-      rows.forEach(r => this.fallback(r));
       return { success: false, reason: 'no_json' };
     }
     
