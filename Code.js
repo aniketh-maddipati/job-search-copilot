@@ -50,8 +50,8 @@ const USER_CONFIG = {
 
 const CORE = Object.freeze({
   VERSION: '1.2.0',
-  SHEETS: { MAIN: 'Dashboard', CACHE: '_cache' },
-  CACHE_COLS: ['id', 'messageCount', 'category', 'isJob', 'play', 'draft', 'updatedAt'],
+  CACHE_VERSION: 1,  // Bump this to invalidate all user caches
+  SHEETS: { MAIN: 'Dashboard', CACHE: '_cache' },  CACHE_COLS: ['id', 'messageCount', 'category', 'isJob', 'play', 'draft', 'updatedAt'],
   HEADERS: ['Done', 'Status', 'Company', 'The Play', 'Draft', 'Days', 'Contact', 'Subject', 'Type'],
   WIDTHS: [50, 110, 100, 280, 320, 50, 85, 200, 70],
   UI: {
@@ -280,6 +280,18 @@ const Cache = {
   load() {
     const sheet = App.sheets.getSheet(App.sheets.getActive(), CORE.SHEETS.CACHE);
     if (!sheet || sheet.getLastRow() <= 1) return this._data;
+    
+    // Check cache version (stored in cell A1 note)
+    const versionNote = sheet.getRange(1, 1).getNote();
+    const cacheVersion = parseInt(versionNote) || 0;
+    
+    if (cacheVersion < CORE.CACHE_VERSION) {
+      trace('cache', `Outdated cache v${cacheVersion}, need v${CORE.CACHE_VERSION}. Clearing.`);
+      sheet.getRange(2, 1, Math.max(sheet.getLastRow() - 1, 1), CORE.CACHE_COLS.length).clearContent();
+      sheet.getRange(1, 1).setNote(String(CORE.CACHE_VERSION));
+      return this._data;  // Return empty, will re-fetch
+    }
+    
     const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, CORE.CACHE_COLS.length).getValues();
     rows.forEach(r => r[0] && this._data.set(r[0], { messageCount: r[1], category: r[2], isJob: r[3], play: r[4], draft: r[5] }));
     return this._data;
@@ -289,8 +301,8 @@ const Cache = {
     let sheet = App.sheets.getSheet(ss, CORE.SHEETS.CACHE) || App.sheets.createSheet(ss, CORE.SHEETS.CACHE);
     const data = rows.map(r => [r.id, r.messageCount, r.category, r.isJob, r.play, r.draft, new Date()]);
     sheet.clear().getRange(1, 1, 1, CORE.CACHE_COLS.length).setValues([CORE.CACHE_COLS]);
-    if (data.length) sheet.getRange(2, 1, data.length, CORE.CACHE_COLS.length).setValues(data);
-  }
+    sheet.getRange(1, 1).setNote(String(CORE.CACHE_VERSION));  // Store version
+    if (data.length) sheet.getRange(2, 1, data.length, CORE.CACHE_COLS.length).setValues(data);  }
 };
 
 const Status = {
@@ -378,7 +390,7 @@ const AI = {
     } catch (e) {
       trace('ai:parse', `JSON parse failed: ${resp.getContentText().slice(0, 100)}`);
       TELEMETRY.error('ai', 'json_parse');
-      rows.forEach(r => this.fallback(r));
+      rows.forEach(r => this.fallback(r, 'error'));
       return { success: false, reason: 'parse_error' };
     }
     
@@ -408,7 +420,7 @@ const AI = {
     } catch (e) {
       trace('ai:resultparse', `Result parse failed: ${match[0].slice(0, 100)}`);
       TELEMETRY.error('ai', 'result_parse');
-      rows.forEach(r => this.fallback(r));
+      rows.forEach(r => this.fallback(r, 'error'));
       return { success: false, reason: 'result_parse_error' };
     }
     
