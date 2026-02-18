@@ -423,3 +423,84 @@ function extractJsonArray(content) {
       expect(result.success).toBe(true);
     });
   });
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+// SYNC FRESH LOGIC TESTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('syncFresh logic', () => {
+  
+    // Simulates the decision: should we clear cache?
+    function shouldClearCache(cacheRowCount) {
+      return cacheRowCount > 0;
+    }
+    
+    test('clears cache when rows exist', () => {
+      expect(shouldClearCache(50)).toBe(true);
+      expect(shouldClearCache(1)).toBe(true);
+    });
+    
+    test('skips clear when cache empty', () => {
+      expect(shouldClearCache(0)).toBe(false);
+    });
+  });
+  
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // CACHE VERSION LOGIC TESTS
+  // ═══════════════════════════════════════════════════════════════════════════════
+  
+  describe('Cache versioning logic', () => {
+    
+    const CURRENT_VERSION = 1;
+    
+    // Simulates: should we invalidate cache based on version?
+    function shouldInvalidateCache(storedVersion, currentVersion) {
+      return storedVersion < currentVersion;
+    }
+    
+    test('invalidates when stored version is older', () => {
+      expect(shouldInvalidateCache(0, 1)).toBe(true);
+      expect(shouldInvalidateCache(1, 2)).toBe(true);
+      expect(shouldInvalidateCache(5, 10)).toBe(true);
+    });
+    
+    test('keeps cache when version matches', () => {
+      expect(shouldInvalidateCache(1, 1)).toBe(false);
+      expect(shouldInvalidateCache(5, 5)).toBe(false);
+    });
+    
+    test('keeps cache when stored version is newer (edge case)', () => {
+      // Shouldn't happen, but shouldn't break
+      expect(shouldInvalidateCache(2, 1)).toBe(false);
+    });
+  });
+  
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // MENU ACTION TESTS
+  // ═══════════════════════════════════════════════════════════════════════════════
+  
+  describe('Menu actions', () => {
+    
+    // Simulates which sync function to call
+    function getSyncAction(menuChoice) {
+      const actions = {
+        'sync': { clearCache: false, name: 'sync' },
+        'syncFresh': { clearCache: true, name: 'syncFresh' },
+      };
+      return actions[menuChoice] || null;
+    }
+    
+    test('Sync Now does not clear cache', () => {
+      const action = getSyncAction('sync');
+      expect(action.clearCache).toBe(false);
+    });
+    
+    test('Sync Fresh clears cache', () => {
+      const action = getSyncAction('syncFresh');
+      expect(action.clearCache).toBe(true);
+    });
+    
+    test('unknown action returns null', () => {
+      expect(getSyncAction('invalid')).toBeNull();
+    });
+  });

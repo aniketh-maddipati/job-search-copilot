@@ -687,6 +687,7 @@ function onOpen() {
   
   ui.createMenu('📧 Job Co-Pilot')
     .addItem('🔄 Sync Now', 'sync')
+    .addItem('🔄 Sync (Fresh)', 'syncFresh')
     .addItem('⚙️ Setup', 'showSetup')
     .addSeparator()
     .addSubMenu(ui.createMenu('🛠️ Debug')
@@ -694,6 +695,22 @@ function onOpen() {
       .addItem('🙈 Hide Logs & Cache', 'hideDebugSheets')
       .addItem('🗑️ Clear Cache', 'clearCache'))
     .addToUi();
+}
+
+/**
+ * Clears cache and syncs — for when data seems stale
+ */
+function syncFresh() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const cache = ss.getSheetByName(CORE.SHEETS.CACHE);
+  
+  if (cache && cache.getLastRow() > 1) {
+    cache.deleteRows(2, cache.getLastRow() - 1);
+    LOG.info('cache', 'Cache cleared for fresh sync');
+  }
+  
+  SpreadsheetApp.getActiveSpreadsheet().toast('Refreshing all threads...', '🔄 Fresh Sync', 3);
+  sync();
 }
 
 function showSetup() {
