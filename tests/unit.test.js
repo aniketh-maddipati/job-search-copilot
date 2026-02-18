@@ -504,3 +504,55 @@ describe('syncFresh logic', () => {
       expect(getSyncAction('invalid')).toBeNull();
     });
   });
+
+ // ═══════════════════════════════════════════════════════════════════════════════
+// BATCHING TESTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('Batching logic', () => {
+  
+    function createBatches(items, batchSize) {
+      const batches = [];
+      for (let i = 0; i < items.length; i += batchSize) {
+        batches.push(items.slice(i, i + batchSize));
+      }
+      return batches;
+    }
+    
+    test('50 items → 5 batches of 10', () => {
+      const items = Array(50).fill('x');
+      const batches = createBatches(items, 10);
+      expect(batches.length).toBe(5);
+      expect(batches[0].length).toBe(10);
+      expect(batches[4].length).toBe(10);
+    });
+    
+    test('23 items → 3 batches (10, 10, 3)', () => {
+      const items = Array(23).fill('x');
+      const batches = createBatches(items, 10);
+      expect(batches.length).toBe(3);
+      expect(batches[0].length).toBe(10);
+      expect(batches[1].length).toBe(10);
+      expect(batches[2].length).toBe(3);
+    });
+    
+    test('5 items → 1 batch of 5', () => {
+      const items = Array(5).fill('x');
+      const batches = createBatches(items, 10);
+      expect(batches.length).toBe(1);
+      expect(batches[0].length).toBe(5);
+    });
+    
+    test('0 items → 0 batches', () => {
+      const batches = createBatches([], 10);
+      expect(batches.length).toBe(0);
+    });
+    
+    test('exact batch size → no partial batch', () => {
+      const items = Array(20).fill('x');
+      const batches = createBatches(items, 10);
+      expect(batches.length).toBe(2);
+      expect(batches[0].length).toBe(10);
+      expect(batches[1].length).toBe(10);
+    });
+  });

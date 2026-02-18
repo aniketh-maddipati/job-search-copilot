@@ -10,27 +10,29 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 
 const PROMPTS = {
-  classify: `You are a job search strategist. Analyze email threads and provide specific, actionable guidance.
+  classify: `You are a job search strategist helping a candidate manage their outreach.
 
 For each thread, return:
 {
   "category": "JOB" | "NETWORKING" | "OTHER",
   "isJob": boolean,
-  "play": "One specific sentence. What exactly should they do? Reference details.",
-  "draft": "Ready-to-send message (250-280 chars). Professional, warm, not desperate."
+  "play": "One specific sentence. What should the candidate do next?",
+  "draft": "Ready-to-send reply (250-280 chars). Address the RECIPIENT by name."
 }
 
 RULES:
-- Be SPECIFIC. Reference actual email content, company news, or concrete hooks.
+- The candidate is SENDING. Drafts are TO the contact, not to the candidate.
+- Start draft with "Hi [Contact]" using the contact's name from the thread data.
+- Be SPECIFIC. Reference actual email content.
 - Never use: "just following up", "circling back", "touching base"
-- Reply Needed (they wrote last): Address what they asked directly
-- Follow Up (you wrote last, 5+ days): Give a hook, don't just bump
-- Waiting (you wrote last, <5 days): Return play: "—", draft: ""
+- Reply Needed: Address what they asked
+- Follow Up (5+ days): Add a hook, don't just bump
+- Waiting (<5 days): Return play: "—", draft: ""
 
 THREADS:
 \${threads}
 
-Return JSON array only. Keep it tight and high signal.
+Return JSON array only.
 [{...},{...},...]`
 };
 
@@ -317,10 +319,11 @@ const Status = {
 // AI SERVICE
 // ═══════════════════════════════════════════════════════════════════════════════
 const AI = {
+  BATCH_SIZE: 10,
+  
   classifyAndPlay(rows) {
     trace('ai:start', { rowCount: rows.length });
     
-    // Check 1: API key
     const key = App.props.get('GROQ_KEY');
     if (!key) {
       trace('ai:nokey', 'No API key found');
@@ -329,14 +332,34 @@ const AI = {
     }
     trace('ai:key', `Key found: ...${key.slice(-4)}`);
     
-    // Check 2: Build prompt
+    // NEW: Process in batches instead of all at once
+    let totalApplied = 0;
+    const totalBatches = Math.ceil(rows.length / this.BATCH_SIZE);
+    
+    for (let i = 0; i < rows.length; i += this.BATCH_SIZE) {
+      const batch = rows.slice(i, i + this.BATCH_SIZE);
+      const batchNum = Math.floor(i / this.BATCH_SIZE) + 1;
+      
+      trace('ai:batch', `${batchNum}/${totalBatches} (${batch.length} threads)`);
+      
+      const result = this._processBatch(batch, key);
+      if (result.success) {
+        totalApplied += result.applied;
+      } else {
+        trace('ai:batch:fail', `Batch ${batchNum}: ${result.reason}`);
+      }
+    }
+    
+    trace('ai:done', { applied: totalApplied, total: rows.length });
+    return { success: true, applied: totalApplied };
+  },
+
+  _processBatch(rows, key) {
     const threadData = rows.map(r => 
-      `Co: ${r.company} | Status: ${r.status.label} | Last: ${r.body}`
+      `Co: ${r.company} | Contact: ${r.contact} | Status: ${r.status.label} | Last: ${r.body}`
     ).join('\n---\n');
     const prompt = PROMPTS.classify.replace('${threads}', threadData);
-    trace('ai:prompt', { length: prompt.length, threads: rows.length });
     
-    // Check 3: Call API
     let resp;
     try {
       resp = UrlFetchApp.fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -351,85 +374,56 @@ const AI = {
         muteHttpExceptions: true
       });
     } catch (e) {
-      trace('ai:network', `Network error: ${e.message}`);
-      TELEMETRY.error('ai', `network: ${e.message}`);
+      trace('ai:network', e.message);
       rows.forEach(r => this.fallback(r, 'network'));
-      return { success: false, reason: 'network', error: e.message };
+      return { success: false, reason: 'network' };
     }
     
-    // Check 4: HTTP status
     const code = resp.getResponseCode();
     trace('ai:http', code);
     
     if (code === 401) {
-      trace('ai:auth', 'Invalid API key');
-      TELEMETRY.error('ai', 'auth_401');
       rows.forEach(r => this.fallback(r, 'auth'));
       return { success: false, reason: 'auth' };
     }
-    
     if (code === 429) {
-      trace('ai:ratelimit', 'Rate limited');
-      TELEMETRY.error('ai', 'rate_limit_429');
       rows.forEach(r => this.fallback(r, 'rate_limit'));
       return { success: false, reason: 'rate_limit' };
     }
-    
     if (code !== 200) {
-      const errBody = resp.getContentText().slice(0, 200);
-      trace('ai:error', `HTTP ${code}: ${errBody}`);
-      TELEMETRY.error('ai', `http_${code}`);
       rows.forEach(r => this.fallback(r, 'error'));
-      return { success: false, reason: 'http_error', code: code };
+      return { success: false, reason: 'http_error' };
     }
     
-    // Check 5: Parse response
     let parsed;
     try {
       parsed = JSON.parse(resp.getContentText());
     } catch (e) {
-      trace('ai:parse', `JSON parse failed: ${resp.getContentText().slice(0, 100)}`);
-      TELEMETRY.error('ai', 'json_parse');
       rows.forEach(r => this.fallback(r, 'error'));
       return { success: false, reason: 'parse_error' };
     }
     
-    // Check 6: Extract content
-    if (!parsed.choices || !parsed.choices[0] || !parsed.choices[0].message) {
-      trace('ai:structure', 'Unexpected response structure');
-      TELEMETRY.error('ai', 'bad_structure');
+    const content = parsed.choices?.[0]?.message?.content;
+    if (!content) {
       rows.forEach(r => this.fallback(r, 'error'));
-      return { success: false, reason: 'bad_structure' };
+      return { success: false, reason: 'no_content' };
     }
     
-    const content = parsed.choices[0].message.content;
-    trace('ai:content', { length: content.length });
-    
-    // Check 7: Extract JSON array
     const match = content.match(/\[[\s\S]*\]/);
     if (!match) {
-      trace('ai:nojson', `No JSON array found: ${content.slice(0, 100)}`);
-      TELEMETRY.error('ai', 'no_json_array');
+      trace('ai:nojson', content.slice(0, 50));
+      rows.forEach(r => this.fallback(r, 'error'));
       return { success: false, reason: 'no_json' };
     }
     
-    // Check 8: Parse result array
     let results;
     try {
       results = JSON.parse(match[0]);
     } catch (e) {
-      trace('ai:resultparse', `Result parse failed: ${match[0].slice(0, 100)}`);
-      TELEMETRY.error('ai', 'result_parse');
       rows.forEach(r => this.fallback(r, 'error'));
-      return { success: false, reason: 'result_parse_error' };
+      return { success: false, reason: 'result_parse' };
     }
     
-    // Check 9: Validate count
-    if (results.length !== rows.length) {
-      trace('ai:mismatch', { expected: rows.length, got: results.length });
-    }
-    
-    // Check 10: Apply results
     let applied = 0;
     rows.forEach((r, i) => {
       if (results[i]) {
@@ -439,12 +433,11 @@ const AI = {
         r.draft = results[i].draft || '';
         applied++;
       } else {
-        this.fallback(r);
+        this.fallback(r, 'error');
       }
     });
     
-    trace('ai:done', { applied: applied, total: rows.length });
-    return { success: true, applied: applied };
+    return { success: true, applied };
   },
   
   fallback(r) {
