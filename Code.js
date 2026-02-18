@@ -440,11 +440,27 @@ const AI = {
     return { success: true, applied };
   },
   
-  fallback(r) {
+  fallback(r, reason) {
     r.category = 'JOB';
     r.isJob = true;
-    r.play = '—';
     r.draft = '';
+    
+    switch (reason) {
+      case 'no_key':
+        r.play = '⚠️ Add API key in Setup';
+        break;
+      case 'auth':
+        r.play = '⚠️ Invalid API key';
+        break;
+      case 'rate_limit':
+        r.play = '⚠️ Rate limited - try later';
+        break;
+      case 'network':
+        r.play = '⚠️ Network error';
+        break;
+      default:
+        r.play = '—';
+    }
   }
 };
 
