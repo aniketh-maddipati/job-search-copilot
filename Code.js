@@ -315,23 +315,47 @@ const Status = {
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// AI SERVICE
+// AI SERVICE (Multi-Provider with Failover)
 // ═══════════════════════════════════════════════════════════════════════════════
+
 const AI = {
   BATCH_SIZE: 10,
+  
+  getKeys() {
+    return {
+      groq: App.props.get('GROQ_KEY'),
+      gemini: App.props.get('GEMINI_KEY')
+    };
+  },
+  
+  selectProvider(keys) {
+    if (keys.groq) return 'groq';
+    if (keys.gemini) return 'gemini';
+    return null;
+  },
+  
+  getNextProvider(current, keys) {
+    const order = ['groq', 'gemini'];
+    const idx = order.indexOf(current);
+    for (let i = idx + 1; i < order.length; i++) {
+      if (keys[order[i]]) return order[i];
+    }
+    return null;
+  },
   
   classifyAndPlay(rows) {
     trace('ai:start', { rowCount: rows.length });
     
-    const key = App.props.get('GROQ_KEY');
-    if (!key) {
-      trace('ai:nokey', 'No API key found');
+    const keys = this.getKeys();
+    let provider = this.selectProvider(keys);
+    
+    if (!provider) {
+      trace('ai:nokey', 'No API keys found');
       rows.forEach(r => this.fallback(r, 'no_key'));
       return { success: false, reason: 'no_key' };
     }
-    trace('ai:key', `Key found: ...${key.slice(-4)}`);
     
-    // NEW: Process in batches instead of all at once
+    // Process in batches with failover
     let totalApplied = 0;
     const totalBatches = Math.ceil(rows.length / this.BATCH_SIZE);
     
@@ -341,9 +365,11 @@ const AI = {
       
       trace('ai:batch', `${batchNum}/${totalBatches} (${batch.length} threads)`);
       
-      const result = this._processBatch(batch, key);
+      const result = this._processBatchWithFailover(batch, keys, provider);
+      
       if (result.success) {
         totalApplied += result.applied;
+        provider = result.provider; // Use successful provider for next batch
       } else {
         trace('ai:batch:fail', `Batch ${batchNum}: ${result.reason}`);
       }
@@ -352,63 +378,50 @@ const AI = {
     trace('ai:done', { applied: totalApplied, total: rows.length });
     return { success: true, applied: totalApplied };
   },
-
-  _processBatch(rows, key) {
+  
+  _processBatchWithFailover(rows, keys, startProvider) {
+    let provider = startProvider;
+    
+    while (provider) {
+      trace('ai:provider', provider);
+      const result = this._processBatch(rows, keys[provider], provider);
+      
+      if (result.success) {
+        return { ...result, provider };
+      }
+      
+      trace(`ai:${provider}:fail`, result.reason);
+      provider = this.getNextProvider(provider, keys);
+      
+      if (provider) {
+        trace('ai:failover', `Trying ${provider}`);
+      }
+    }
+    
+    // All providers failed
+    rows.forEach(r => this.fallback(r, 'all_failed'));
+    return { success: false, reason: 'all_providers_failed' };
+  },
+  
+  _processBatch(rows, key, provider) {
     const threadData = rows.map(r => 
       `Co: ${r.company} | Contact: ${r.contact} | Status: ${r.status.label} | Last: ${r.body}`
     ).join('\n---\n');
     const prompt = PROMPTS.classify.replace('${threads}', threadData);
     
-    let resp;
-    try {
-      resp = UrlFetchApp.fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'post',
-        contentType: 'application/json',
-        headers: { 'Authorization': `Bearer ${key}` },
-        payload: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.2
-        }),
-        muteHttpExceptions: true
-      });
-    } catch (e) {
-      trace('ai:network', e.message);
-      rows.forEach(r => this.fallback(r, 'network'));
-      return { success: false, reason: 'network' };
+    // Call provider
+    const response = Providers[provider].call(prompt, key);
+    trace('ai:http', response.success ? 200 : response.code || 'error');
+    
+    if (!response.success) {
+      rows.forEach(r => this.fallback(r, response.reason));
+      return { success: false, reason: response.reason };
     }
     
-    const code = resp.getResponseCode();
-    trace('ai:http', code);
-    
-    if (code === 401) {
-      rows.forEach(r => this.fallback(r, 'auth'));
-      return { success: false, reason: 'auth' };
-    }
-    if (code === 429) {
-      rows.forEach(r => this.fallback(r, 'rate_limit'));
-      return { success: false, reason: 'rate_limit' };
-    }
-    if (code !== 200) {
-      rows.forEach(r => this.fallback(r, 'error'));
-      return { success: false, reason: 'http_error' };
-    }
-    
-    let parsed;
-    try {
-      parsed = JSON.parse(resp.getContentText());
-    } catch (e) {
-      rows.forEach(r => this.fallback(r, 'error'));
-      return { success: false, reason: 'parse_error' };
-    }
-    
-    const content = parsed.choices?.[0]?.message?.content;
-    if (!content) {
-      rows.forEach(r => this.fallback(r, 'error'));
-      return { success: false, reason: 'no_content' };
-    }
-    
+    // Parse response
+    const content = response.content;
     const match = content.match(/\[[\s\S]*\]/);
+    
     if (!match) {
       trace('ai:nojson', content.slice(0, 50));
       rows.forEach(r => this.fallback(r, 'error'));
@@ -423,6 +436,7 @@ const AI = {
       return { success: false, reason: 'result_parse' };
     }
     
+    // Apply results
     let applied = 0;
     rows.forEach((r, i) => {
       if (results[i]) {
@@ -457,8 +471,76 @@ const AI = {
       case 'network':
         r.play = '⚠️ Network error';
         break;
+      case 'all_failed':
+        r.play = '⚠️ All providers failed - try later';
+        break;
       default:
         r.play = '⚠️ Sync again to classify';
+    }
+  }
+};
+// ═══════════════════════════════════════════════════════════════════════════════
+// PROVIDERS (Groq + Gemini)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const Providers = {
+  groq: {
+    name: 'Groq',
+    call(prompt, key) {
+      const resp = UrlFetchApp.fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'post',
+        contentType: 'application/json',
+        headers: { 'Authorization': `Bearer ${key}` },
+        payload: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.2
+        }),
+        muteHttpExceptions: true
+      });
+      
+      const code = resp.getResponseCode();
+      if (code !== 200) {
+        return { success: false, code, reason: code === 401 ? 'auth' : code === 429 ? 'rate_limit' : 'http_error' };
+      }
+      
+      try {
+        const parsed = JSON.parse(resp.getContentText());
+        const content = parsed.choices?.[0]?.message?.content;
+        return content ? { success: true, content } : { success: false, reason: 'no_content' };
+      } catch (e) {
+        return { success: false, reason: 'parse_error' };
+      }
+    }
+  },
+  
+  gemini: {
+    name: 'Gemini',
+    call(prompt, key) {
+      const resp = UrlFetchApp.fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, 
+        {
+          method: 'post',
+          contentType: 'application/json',
+          payload: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+          }),
+          muteHttpExceptions: true
+        }
+      );
+      
+      const code = resp.getResponseCode();
+      if (code !== 200) {
+        return { success: false, code, reason: code === 400 ? 'auth' : code === 429 ? 'rate_limit' : 'http_error' };
+      }
+      
+      try {
+        const parsed = JSON.parse(resp.getContentText());
+        const content = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+        return content ? { success: true, content } : { success: false, reason: 'no_content' };
+      } catch (e) {
+        return { success: false, reason: 'parse_error' };
+      }
     }
   }
 };
@@ -643,11 +725,18 @@ function doGet() {
 // BOOTSTRAP (UPDATED TO CALL FLAT FUNCTIONS)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function saveAndInit(apiKey) {
+function saveAndInit(keys) {
   try {
-    // 1. Save Key
-    PropertiesService.getScriptProperties().setProperty('GROQ_KEY', apiKey);
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const props = PropertiesService.getScriptProperties();
+    
+    // 1. Save provided keys
+    if (keys.groq) props.setProperty('GROQ_KEY', keys.groq);
+    if (keys.gemini) props.setProperty('GEMINI_KEY', keys.gemini);
+    
+    // Verify at least one key
+    if (!keys.groq && !keys.gemini) {
+      throw new Error('Please provide at least one API key');
+    }    const ss = SpreadsheetApp.getActiveSpreadsheet();
     
     // 2. Build Dashboard (Frictionless: User doesn't have to create it)
     let dash = ss.getSheetByName(CORE.SHEETS.MAIN) || ss.insertSheet(CORE.SHEETS.MAIN);
@@ -729,9 +818,8 @@ function syncFresh() {
 function showSetup() {
   const html = HtmlService.createTemplateFromFile('Setup')
     .evaluate()
-    .setWidth(450)
-    .setHeight(500);
-  SpreadsheetApp.getUi().showModalDialog(html, 'Job Co-Pilot Setup');
+    .setTitle('Job Co-Pilot Setup');
+  SpreadsheetApp.getUi().showSidebar(html);
 }
 
 

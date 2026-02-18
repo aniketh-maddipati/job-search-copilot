@@ -307,17 +307,33 @@
     <div id="viewAuth" class="view active">
       <h1>Job Co-Pilot</h1>
       <h2>Connect your AI</h2>
-      <p class="subtitle">Paste your Groq API key to enable AI-powered email classification and draft generation.</p>
+      <p class="subtitle">
+        Scans your sent emails, identifies job threads, and suggests next steps.<br>
+        <span style="color: var(--mute); font-size: 11px;">100% free • Runs daily at 6 AM • Your data stays in your Sheet</span>
+      </p>
       
+      <label style="font-size: 11px; color: var(--mute); margin-bottom: 4px; display: block;">Groq (recommended)</label>
       <input 
         type="password" 
-        id="apiKey" 
+        id="groqKey" 
         placeholder="gsk_..." 
         oninput="checkInput()"
         autocomplete="off"
       >
       <p class="input-hint">
-        Don't have a key? <a href="https://console.groq.com/keys" target="_blank">Get one free →</a>
+        <a href="https://console.groq.com/keys" target="_blank">Get free key →</a>
+      </p>
+      
+      <label style="font-size: 11px; color: var(--mute); margin-bottom: 4px; display: block; margin-top: 16px;">Gemini (backup)</label>
+      <input 
+        type="password" 
+        id="geminiKey" 
+        placeholder="AIza..." 
+        oninput="checkInput()"
+        autocomplete="off"
+      >
+      <p class="input-hint">
+        <a href="https://aistudio.google.com/app/apikey" target="_blank">Get free key →</a>
       </p>
       
       <button id="btnInit" disabled onclick="startBootstrap()">
@@ -334,7 +350,7 @@
         <div class="step" id="step1">
           <div class="step-icon pending">○</div>
           <div class="step-content">
-            <div class="step-title">Saving API key</div>
+            <div class="step-title">Saving API key(s)</div>
             <div class="step-detail">Storing in script properties</div>
           </div>
         </div>
@@ -404,7 +420,11 @@
       </div>
       
       <p class="next-sync">
-        ⏰ Next automatic sync: 6:00 AM tomorrow
+        ⏰ Runs automatically every day at 6 AM<br>
+        <span style="font-size: 10px; margin-top: 8px; display: block;">
+          Built by <a href="https://www.linkedin.com/in/anikethmaddipati/" target="_blank" style="color: var(--mute); text-decoration: underline;">Aniketh Maddipati</a> • 
+          <a href="https://github.com/aniketh3014/job-search-copilot" target="_blank" style="color: var(--mute); text-decoration: underline;">GitHub</a>
+        </span>
       </p>
     </div>
 
@@ -428,17 +448,25 @@
   <script>
     // Check API key format
     function checkInput() {
-      const input = document.getElementById('apiKey');
-      const val = input.value;
-      const isValid = val.startsWith('gsk_') && val.length > 20;
+      const groq = document.getElementById('groqKey').value;
+      const gemini = document.getElementById('geminiKey').value;
       
-      document.getElementById('btnInit').disabled = !isValid;
-      input.classList.toggle('valid', isValid);
+      const groqValid = groq.startsWith('gsk_') && groq.length > 20;
+      const geminiValid = gemini.startsWith('AIza') && gemini.length > 20;
+      
+      document.getElementById('groqKey').classList.toggle('valid', groqValid);
+      document.getElementById('geminiKey').classList.toggle('valid', geminiValid);
+      
+      // Enable if at least one is valid
+      document.getElementById('btnInit').disabled = !(groqValid || geminiValid);
     }
 
     // Start bootstrap process
     function startBootstrap() {
-      const key = document.getElementById('apiKey').value;
+      const keys = {
+        groq: document.getElementById('groqKey').value || null,
+        gemini: document.getElementById('geminiKey').value || null
+      };
       
       // Switch to progress view
       document.getElementById('viewAuth').classList.remove('active');
@@ -451,7 +479,7 @@
       google.script.run
         .withSuccessHandler(onComplete)
         .withFailureHandler(onError)
-        .saveAndInit(key);
+        .saveAndInit(keys);
     }
 
     // Animate progress steps
@@ -507,7 +535,7 @@
         
         // Populate stats
         document.getElementById('statThreads').textContent = res.stats.total || 0;
-        document.getElementById('statActions').textContent = res.stats.replyNeeded || 0;
+        document.getElementById('statActions').textContent = res.stats.opportunities || 0;
         document.getElementById('sheetLink').href = res.sheetUrl;
       }, 500);
     }

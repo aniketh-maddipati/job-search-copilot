@@ -584,3 +584,85 @@ describe('Sheet cleanup logic', () => {
       expect(shouldDeleteSheet('_cache', 0)).toBe(false);
     });
   });
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+// PROVIDER FAILOVER TESTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+describe('Provider selection', () => {
+  
+    function selectProvider(keys) {
+      if (keys.groq) return 'groq';
+      if (keys.gemini) return 'gemini';
+      return null;
+    }
+    
+    test('selects Groq when available', () => {
+      expect(selectProvider({ groq: 'gsk_xxx' })).toBe('groq');
+    });
+    
+    test('selects Groq first when both available', () => {
+      expect(selectProvider({ groq: 'gsk_xxx', gemini: 'AIza_xxx' })).toBe('groq');
+    });
+    
+    test('selects Gemini when only Gemini available', () => {
+      expect(selectProvider({ gemini: 'AIza_xxx' })).toBe('gemini');
+    });
+    
+    test('returns null when no keys', () => {
+      expect(selectProvider({})).toBeNull();
+    });
+  });
+  
+  describe('Provider failover', () => {
+    
+    function getNextProvider(current, keys) {
+      const order = ['groq', 'gemini'];
+      const currentIndex = order.indexOf(current);
+      
+      for (let i = currentIndex + 1; i < order.length; i++) {
+        if (keys[order[i]]) return order[i];
+      }
+      return null;
+    }
+    
+    test('fails over from Groq to Gemini', () => {
+      expect(getNextProvider('groq', { groq: 'x', gemini: 'y' })).toBe('gemini');
+    });
+    
+    test('returns null when no fallback available', () => {
+      expect(getNextProvider('groq', { groq: 'x' })).toBeNull();
+    });
+    
+    test('returns null when already at last provider', () => {
+      expect(getNextProvider('gemini', { gemini: 'x' })).toBeNull();
+    });
+  });
+  
+  describe('API key validation', () => {
+    
+    function validateKey(key, provider) {
+      if (!key || key.length < 10) return false;
+      if (provider === 'groq') return key.startsWith('gsk_');
+      if (provider === 'gemini') return key.startsWith('AIza');
+      return false;
+    }
+    
+    test('validates Groq key format', () => {
+      expect(validateKey('gsk_abc123def456', 'groq')).toBe(true);
+      expect(validateKey('AIza_xxx', 'groq')).toBe(false);
+      expect(validateKey('invalid', 'groq')).toBe(false);
+    });
+    
+    test('validates Gemini key format', () => {
+      expect(validateKey('AIzaSyAbc123def456', 'gemini')).toBe(true);
+      expect(validateKey('gsk_xxx', 'gemini')).toBe(false);
+      expect(validateKey('invalid', 'gemini')).toBe(false);
+    });
+    
+    test('rejects empty or short keys', () => {
+      expect(validateKey('', 'groq')).toBe(false);
+      expect(validateKey('gsk_', 'groq')).toBe(false);
+      expect(validateKey(null, 'groq')).toBe(false);
+    });
+  });
