@@ -210,6 +210,18 @@
     }
     
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-dots::after {
+      content: '';
+      animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
     
     .step-content { flex: 1; }
     
@@ -517,7 +529,7 @@
   <!-- VIEW: Progress -->
   <div id="viewProgress" class="view">
     <h1>Job Co-Pilot</h1>
-    <h2>Setting up...</h2>
+    <h2>Setting up<span class="loading-dots"></span></h2>
     
     <div class="progress-container">
       <div class="step" id="step1">
