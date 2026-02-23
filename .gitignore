@@ -12,3 +12,4 @@ eslint.config.js
 .gitignore
 deploy.sh
 README.md
+.claspignore
