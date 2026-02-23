@@ -1,11 +1,13 @@
 # Job Co-Pilot
 
+![Version](https://img.shields.io/github/v/release/aniketh-maddipati/job-search-copilot)
+![License](https://img.shields.io/github/license/aniketh-maddipati/job-search-copilot)
+
 An AI-powered job search tracker that lives in Google Sheets.
 
 Scans your sent emails. Finds job threads. Tells you who to reply to.
 
-![Daily digest email](/screenshots/desktop_digest.png)
-
+![Daily digest email](screenshots/desktop_digest.png)
 
 ---
 For the full story, see [I Built This Because Job Searching Broke Me](https://medium.com/@anikethmaddipati/i-built-this-because-job-searching-broke-me-and-maybe-itll-help-you-too-74ca73305da8).
