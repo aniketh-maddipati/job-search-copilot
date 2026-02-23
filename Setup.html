@@ -784,7 +784,8 @@
     document.getElementById('groqKey').classList.toggle('valid', groqValid);
     document.getElementById('geminiKey').classList.toggle('valid', geminiValid);
     
-    const hasValidKey = useGemini ? geminiValid : groqValid;
+    // At least one valid key required
+    const hasValidKey = groqValid || geminiValid;
     document.getElementById('btnInit').disabled = !hasValidKey;
   }
   
@@ -826,32 +827,30 @@
   // SETUP FLOW
   // ═══════════════════════════════════════════════════════════════════════════
   
-  function startSetup() {
-    const keys = {
-      groq: useGemini ? null : document.getElementById('groqKey').value,
-      gemini: useGemini ? document.getElementById('geminiKey').value : null
-    };
-    
-    const context = {
-      linkedin: linkedinParsed,
-      resume: resumeParsed
-    };
-    
-    const consent = {
-      digest: document.getElementById('consentDigest').checked,
-      autoSync: document.getElementById('consentSync').checked
-    };
-    
-    showView('viewProgress');
-    
-    // Start progress animation
-    setStepState('step1', 'running');
-    
-    google.script.run
-      .withSuccessHandler(onSuccess)
-      .withFailureHandler(onError)
-      .saveAndInit(keys, context, consent);
-  }
+function startSetup() {
+  const keys = {
+    groq: document.getElementById('groqKey').value || null,
+    gemini: document.getElementById('geminiKey').value || null
+  };
+  
+  const context = {
+    linkedin: linkedinParsed,
+    resume: resumeParsed
+  };
+  
+  const consent = {
+    digest: document.getElementById('consentDigest').checked,
+    autoSync: document.getElementById('consentSync').checked
+  };
+  
+  showView('viewProgress');
+  setStepState('step1', 'running');
+  
+  google.script.run
+    .withSuccessHandler(onSuccess)
+    .withFailureHandler(onError)
+    .saveAndInit(keys, context, consent);
+}
   
   function onSuccess(res) {
     // Complete all steps
