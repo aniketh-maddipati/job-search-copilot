@@ -6,6 +6,7 @@ Scans your sent emails. Finds job threads. Tells you who to reply to.
 
 ![Daily digest email](/screenshots/desktop_digest.png)
 
+
 ---
 For the full story, see [I Built This Because Job Searching Broke Me](https://medium.com/@anikethmaddipati/i-built-this-because-job-searching-broke-me-and-maybe-itll-help-you-too-74ca73305da8).
 

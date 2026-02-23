@@ -69,6 +69,7 @@ Groq primary. Gemini backup. Automatic switch on rate limit.
 
 ---
 
+
 ## Deep Dive
 
 [The Architecture of a Zero-Infrastructure AI App](https://medium.com/@anikethmaddipati/the-architecture-of-a-zero-infrastructure-ai-app-12e7d5ffab96)
