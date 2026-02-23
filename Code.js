@@ -836,8 +836,7 @@ function sendDailyDigest() {
     const dateStr = `${weekdays[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
 
     const formatName = (contact) => contact.split('.')[0].replace(/^\w/, c => c.toUpperCase());
-    const threadLink = (id) => `https://mail.google.com/mail/u/0/#sent/${id}`;
-
+    const threadLink = (id) => `https://mail.google.com/mail/u/0/#all/${id}`; 
     const replyRows = replyNeeded.slice(0, 3).map(r => ({
       name: formatName(r.contact),
       company: r.company,
@@ -877,41 +876,45 @@ function sendDailyDigest() {
 
 function sendWelcomeEmail(sheetUrl, consent, stats) {
   try {
-    const email = Session.getActiveUser().getEmail();
+    const email = App.session.getEmail();
+    if (!email) {
+      LOG.warn('welcome', 'No email found');
+      throw new Error('Could not determine user email');
+    }
     
-    const subject = `You're set up — here's your first snapshot`;
+    const subject = "You're set up — here's your first snapshot";
     
     const body = `Hey,
 
-    Thanks for trying Job Co-Pilot.
-    
-    Your dashboard is ready with ${stats.jobThreads} job threads:
-    - ${stats.replyNeeded} need your reply
-    - ${stats.followUp} ready for follow-up
-    - ${stats.waiting} waiting on them
-    
-    → Open Dashboard: ${sheetUrl}
-    
-    What happens next:
-    ${consent.autoSync ? '• 6am daily — syncs new sent emails' : '• Manual sync only'}
-    ${consent.digest ? '• 7am daily — digest email with your top plays' : '• No daily digest'}
-    
-    Quick tip: Mark threads "Done" to hide stale conversations.
-    
-    Privacy: Your emails never leave your Google account. The AI only sees thread metadata.
-    
-    Built this while job searching myself. Hope it helps you too.
-    
-    — Aniketh
-    https://linkedin.com/in/anikethmaddipati`;
+Thanks for trying Job Co-Pilot.
+
+Your dashboard is ready with ${stats.jobThreads} job threads:
+- ${stats.replyNeeded} need your reply
+- ${stats.followUp} ready for follow-up
+- ${stats.waiting} waiting on them
+
+→ Open Dashboard: ${sheetUrl}
+
+What happens next:
+${consent.autoSync ? '• 6am daily — syncs new sent emails' : '• Manual sync only'}
+${consent.digest ? '• 7am daily — digest email with your top plays' : '• No daily digest'}
+
+Quick tip: Mark threads "Done" to hide stale conversations.
+
+Privacy: Your emails never leave your Google account. The AI only sees thread metadata.
+
+Built this while job searching myself. Hope it helps you too.
+
+— Aniketh
+https://linkedin.com/in/anikethmaddipati`;
 
     GmailApp.sendEmail(email, subject, body);
-    LOG.info('welcome', 'Sent welcome email');
+    LOG.info('welcome', `Sent to ${email.slice(0, 3)}...`);
   } catch (e) {
-    LOG.warn('welcome', `Failed: ${e.message}`);
+    LOG.error('welcome', e.message);
+    throw e;  // Re-throw so saveAndInit catches it
   }
 }
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // BOOTSTRAP
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -979,16 +982,39 @@ function saveAndInit(keys, context, consent) {
       waiting: rows.filter(r => r.status.label === 'Waiting').length
     };
 
+    // Track email status
+    let welcomeSent = false;
+    let digestSent = false;
+
     // Welcome email (after sync so we have stats)
-    sendWelcomeEmail(ss.getUrl(), consent, emailStats);
+    try {
+      sendWelcomeEmail(ss.getUrl(), consent, emailStats);
+      welcomeSent = true;
+    } catch (e) {
+      LOG.warn('welcome', `Failed: ${e.message}`);
+      warnings.push('Welcome email failed to send');
+    }
 
     // Send first digest immediately if opted in
     if (consent.digest && rows.length > 0) {
-      sendDailyDigest();
+      try {
+        sendDailyDigest();
+        digestSent = true;
+      } catch (e) {
+        LOG.warn('digest', `First digest failed: ${e.message}`);
+        warnings.push('First digest failed to send');
+      }
     }
 
     if (stats.total === 0) {
-      return { success: true, empty: true, message: 'No sent emails found', sheetUrl: ss.getUrl() };
+      return { 
+        success: true, 
+        empty: true, 
+        message: 'No sent emails found', 
+        sheetUrl: ss.getUrl(),
+        welcomeSent,
+        digestSent
+      };
     }
 
     const topPlays = rows.filter(r => r.status.label !== 'Waiting').slice(0, 3).map(r => ({
@@ -1004,6 +1030,8 @@ function saveAndInit(keys, context, consent) {
       stats,
       topPlays,
       warnings,
+      welcomeSent,
+      digestSent,
       sheetUrl: ss.getUrl() + '#gid=' + dash.getSheetId(),
       scriptUrl: `https://script.google.com/d/${ScriptApp.getScriptId()}/edit`
     };

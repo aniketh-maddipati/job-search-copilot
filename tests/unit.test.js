@@ -462,10 +462,9 @@ describe('Digest helpers', () => {
   });
 
   test('generates correct thread link', () => {
-    const threadLink = (id) => `https://mail.google.com/mail/u/0/#sent/${id}`;
-    
-    expect(threadLink('abc123')).toBe('https://mail.google.com/mail/u/0/#sent/abc123');
-    expect(threadLink('19c30b5ab4ee9c01')).toBe('https://mail.google.com/mail/u/0/#sent/19c30b5ab4ee9c01');
+    const threadLink = (id) => `https://mail.google.com/mail/u/0/#all/${id}`;    
+    expect(threadLink('abc123')).toBe('https://mail.google.com/mail/u/0/#all/abc123');
+    expect(threadLink('19c30b5ab4ee9c01')).toBe('https://mail.google.com/mail/u/0/#all/19c30b5ab4ee9c01');
   });
 
   test('formats date string', () => {

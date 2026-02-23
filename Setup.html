@@ -846,50 +846,64 @@ function startSetup() {
     .saveAndInit(keys, context, consent);
 }
   
-  function onSuccess(res) {
-    // Complete all steps
-    ['step1', 'step2', 'step3', 'step4', 'step5'].forEach(s => setStepState(s, 'done'));
-    
-    setTimeout(() => {
-      showView('viewSuccess');
-      
-      // Sheet link
-      document.getElementById('sheetLink').href = res.sheetUrl;
-      
-      // Script link
-      if (res.scriptUrl) {
-        document.getElementById('scriptLink').href = res.scriptUrl;
-      }
-      
-      // Handle empty state
-      if (res.empty) {
-        document.getElementById('emptyState').classList.remove('hidden');
-        document.getElementById('topPlaysSection').classList.add('hidden');
-      } else {
-        // Render top plays
-        const playsHtml = (res.topPlays || []).map(p => `
-          <div class="play-item">
-            <span class="play-status ${p.status === 'Reply Needed' ? 'reply' : 'follow'}">
-              ${p.status === 'Reply Needed' ? 'Reply' : 'Follow'}
-            </span>
-            <span class="play-contact">${p.contact}</span>
-            <span class="play-company">${p.company}</span>
-          </div>
-        `).join('');
-        
-        document.getElementById('topPlaysSection').innerHTML = playsHtml || '<p style="color: var(--mute); font-size: 12px;">All caught up!</p>';
-      }
-      
-      // Show warnings if any
-      if (res.warnings && res.warnings.length > 0) {
-        const warningsHtml = res.warnings.map(w => `<p>⚠️ ${w}</p>`).join('');
-        document.getElementById('warningsSection').innerHTML = warningsHtml;
-        document.getElementById('warningsSection').classList.remove('hidden');
-      }
-      
-    }, 400);
-  }
+function onSuccess(res) {
+  // Complete all steps
+  ['step1', 'step2', 'step3', 'step4', 'step5'].forEach(s => setStepState(s, 'done'));
   
+  setTimeout(() => {
+    showView('viewSuccess');
+    
+    // Sheet link
+    document.getElementById('sheetLink').href = res.sheetUrl;
+    
+    // Script link
+    if (res.scriptUrl) {
+      document.getElementById('scriptLink').href = res.scriptUrl;
+    }
+    
+    // Handle empty state
+    if (res.empty) {
+      document.getElementById('emptyState').classList.remove('hidden');
+      document.getElementById('topPlaysSection').classList.add('hidden');
+    } else {
+      // Render top plays
+      const playsHtml = (res.topPlays || []).map(p => `
+        <div class="play-item">
+          <span class="play-status ${p.status === 'Reply Needed' ? 'reply' : 'follow'}">
+            ${p.status === 'Reply Needed' ? 'Reply' : 'Follow'}
+          </span>
+          <span class="play-contact">${p.contact}</span>
+          <span class="play-company">${p.company}</span>
+        </div>
+      `).join('');
+      
+      document.getElementById('topPlaysSection').innerHTML = playsHtml || '<p style="color: var(--mute); font-size: 12px;">All caught up!</p>';
+    }
+    
+    // Build status messages
+    const warningsSection = document.getElementById('warningsSection');
+    let statusHtml = '';
+    
+    // Email status (success)
+    if (res.welcomeSent || res.digestSent) {
+      statusHtml += '<p style="color: var(--success);">📬 Check your inbox:</p>';
+      if (res.welcomeSent) statusHtml += '<p style="color: var(--success);">✓ Welcome email sent</p>';
+      if (res.digestSent) statusHtml += '<p style="color: var(--success);">✓ First digest sent</p>';
+    }
+    
+    // Warnings (failures)
+    if (res.warnings && res.warnings.length > 0) {
+      statusHtml += res.warnings.map(w => `<p>⚠️ ${w}</p>`).join('');
+    }
+    
+    // Show section if there's anything to display
+    if (statusHtml) {
+      warningsSection.innerHTML = statusHtml;
+      warningsSection.classList.remove('hidden');
+    }
+    
+  }, 400);
+}
   function onError(e) {
     // Mark current running step as error
     document.querySelectorAll('.step-icon.running').forEach(icon => {
