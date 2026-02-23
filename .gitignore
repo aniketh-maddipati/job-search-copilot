@@ -2,3 +2,13 @@ node_modules/
 .DS_Store
 *.log
 .env
+
+tests/**
+.git/**
+package.json
+package-lock.json
+jest.config.cjs
+eslint.config.js
+.gitignore
+deploy.sh
+README.md
