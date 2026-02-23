@@ -120,6 +120,25 @@
     
     .toggle-link:hover { color: var(--text); }
     
+    .consent-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--mute);
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    
+    .consent-row input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--success);
+      cursor: pointer;
+    }
+    
+    .consent-row span { flex: 1; }
+    
     .hidden { display: none; }
     
     button { 
@@ -470,16 +489,31 @@
     <div id="linkedinStatus" class="input-status"></div>
     
     <textarea 
-      id="resumePaste" 
-      rows="3" 
-      placeholder="Paste resume text..."
-      oninput="validateContext('resume')"
-    ></textarea>
-    <div id="resumeStatus" class="input-status"></div>
-    
-    <button id="btnInit" disabled onclick="startSetup()">
-      Initialize
-    </button>
+    id="resumePaste" 
+    rows="3" 
+    placeholder="Paste resume text..."
+    oninput="validateContext('resume')"
+  >
+</textarea>
+  <div id="resumeStatus" class="input-status"></div>
+  
+  <!-- Consent Section -->
+  <div class="section-label">Permissions</div>
+  
+  <label class="consent-row">
+    <input type="checkbox" id="consentDigest" onchange="validateInputs()">
+    <span>Send me a daily digest email at 7am</span>
+  </label>
+  
+  <label class="consent-row">
+    <input type="checkbox" id="consentSync" checked onchange="validateInputs()">
+    <span>Auto-sync my sent emails daily at 6am</span>
+  </label>
+  
+  <button id="btnInit" disabled onclick="startSetup()">
+    Initialize
+  </button>
+
   </div>
 
   <!-- VIEW: Progress -->
@@ -806,6 +840,11 @@
       resume: resumeParsed
     };
     
+    const consent = {
+      digest: document.getElementById('consentDigest').checked,
+      autoSync: document.getElementById('consentSync').checked
+    };
+    
     showView('viewProgress');
     
     // Start progress animation
@@ -814,7 +853,7 @@
     google.script.run
       .withSuccessHandler(onSuccess)
       .withFailureHandler(onError)
-      .saveAndInit(keys, context);
+      .saveAndInit(keys, context, consent);
   }
   
   function onSuccess(res) {

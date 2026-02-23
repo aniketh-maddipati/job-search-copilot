@@ -880,8 +880,9 @@ function sendDailyDigest() {
 // BOOTSTRAP
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function saveAndInit(keys, context) {
+function saveAndInit(keys, context, consent) {
   context = context || {};
+  consent = consent || { digest: false, autoSync: true };
 
   try {
     const props = PropertiesService.getScriptProperties();
@@ -924,9 +925,16 @@ function saveAndInit(keys, context) {
 
     // Triggers
     const warnings = [];
-    if (!createDailyTrigger()) warnings.push('Sync trigger failed');
-    if (!createDigestTrigger()) warnings.push('Digest trigger failed');
-
+    if (consent.autoSync) {
+    // Triggers (based on consent)
+    const warnings = [];
+    if (consent.autoSync) {
+      if (!createDailyTrigger()) warnings.push('Sync trigger failed');
+    }
+    if (consent.digest) {
+      if (!createDigestTrigger()) warnings.push('Digest trigger failed');
+    }
+    }
     // Initial sync
     const { stats, rows } = sync();
 
