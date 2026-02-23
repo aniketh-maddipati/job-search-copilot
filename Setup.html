@@ -46,81 +46,81 @@
       font-family: 'Inter', sans-serif;
       font-size: 20px;
       font-weight: 600;
-      margin: 0 0 24px 0;
+      margin: 0 0 16px 0;
       color: var(--text);
     }
     
-    .subtitle {
-      font-size: 13px;
-      color: var(--mute);
-      margin-bottom: 32px;
-      line-height: 1.5;
-    }
-    
-    label {
+    .value-prop {
+      font-family: 'Geist Mono', monospace;
       font-size: 11px;
       color: var(--mute);
-      margin-bottom: 4px;
-      display: block;
+      margin-bottom: 24px;
+      line-height: 1.6;
     }
-
-    input { 
+    
+    .value-prop span { color: var(--text); }
+    
+    .section-label {
+      font-family: 'Geist Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--mute);
+      margin: 24px 0 12px 0;
+    }
+    
+    .section-label:first-of-type { margin-top: 0; }
+    
+    input, textarea { 
       width: 100%; 
       background: #0a0a0a; 
       border: 1px solid var(--border); 
       color: #fff; 
-      padding: 14px 12px; 
+      padding: 12px; 
       font-family: 'Geist Mono', monospace; 
       font-size: 13px; 
       border-radius: 6px; 
-      margin-bottom: 4px; 
+      margin-bottom: 8px; 
       outline: none;
       transition: border-color 0.2s;
+      resize: none;
     }
     
-    input:focus { border-color: #444; }
-    input.valid { border-color: var(--success); }
-
-    textarea {
-      width: 100%;
-      background: #0a0a0a;
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 12px;
-      font-family: 'Inter', sans-serif;
-      font-size: 12px;
-      border-radius: 6px;
-      margin-bottom: 4px;
-      outline: none;
-      resize: vertical;
-      min-height: 80px;
-      line-height: 1.5;
-      transition: border-color 0.2s;
-    }
-
-    textarea:focus { border-color: #444; }
+    input:focus, textarea:focus { border-color: #444; }
+    input.valid, textarea.valid { border-color: var(--success); }
+    input.invalid, textarea.invalid { border-color: #ef4444; }
     
     .input-hint {
       font-size: 11px;
       color: var(--mute);
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     
-    .input-hint a {
-      color: var(--text);
-      text-decoration: underline;
+    .input-hint a { color: var(--text); text-decoration: underline; }
+    
+    .input-status {
+      font-size: 11px;
+      margin-bottom: 12px;
+      min-height: 16px;
     }
-
-    .auth-notice {
+    
+    .input-status.valid { color: var(--success); }
+    .input-status.error { color: #ef4444; }
+    
+    .toggle-link {
       font-size: 11px;
       color: var(--mute);
-      padding: 12px;
-      background: #0a0a0a;
-      border: 1px solid var(--border);
-      border-radius: 6px;
+      cursor: pointer;
       margin-bottom: 16px;
-      line-height: 1.6;
+      display: inline-block;
     }
+    
+    .toggle-link:hover { color: var(--text); }
+    
+    .hidden { display: none; }
     
     button { 
       width: 100%; 
@@ -136,6 +136,7 @@
       transition: all 0.2s;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      margin-top: 8px;
     }
     
     button:hover:not(:disabled) { 
@@ -152,13 +153,14 @@
     .view { display: none; }
     .active { display: block; }
     
-    .progress-container { margin: 32px 0; }
+    /* Progress Steps */
+    .progress-container { margin: 24px 0; }
     
     .step {
       display: flex;
       align-items: flex-start;
       gap: 12px;
-      padding: 12px 0;
+      padding: 10px 0;
       border-bottom: 1px solid var(--border);
     }
     
@@ -171,6 +173,7 @@
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      font-size: 12px;
     }
     
     .step-icon.pending { color: var(--mute); }
@@ -179,8 +182,8 @@
     .step-icon.error { color: #ef4444; }
     
     .spinner {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       border: 2px solid var(--border);
       border-top-color: var(--warning);
       border-radius: 50%;
@@ -192,3 +195,714 @@
     .step-content { flex: 1; }
     
     .step-title {
+      font-family: 'Geist Mono', monospace;
+      font-size: 11px;
+      color: var(--text);
+    }
+    
+    .step.pending .step-title { color: var(--mute); }
+    
+    /* Success State */
+    .success-header {
+      text-align: center;
+      padding: 16px 0;
+    }
+    
+    .success-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      color: #000;
+      font-size: 20px;
+    }
+    
+    /* Top Plays */
+    .top-plays {
+      margin: 20px 0;
+    }
+    
+    .play-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: #0a0a0a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    
+    .play-status {
+      font-size: 10px;
+      font-family: 'Geist Mono', monospace;
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    
+    .play-status.reply { background: #fce8e6; color: #c5221f; }
+    .play-status.follow { background: #fef7e0; color: #e37400; }
+    
+    .play-contact {
+      font-size: 13px;
+      color: var(--text);
+    }
+    
+    .play-company {
+      font-size: 11px;
+      color: var(--mute);
+      margin-left: auto;
+    }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 24px;
+      background: #0a0a0a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+    
+    .empty-state p {
+      font-size: 13px;
+      color: var(--mute);
+      margin: 0;
+    }
+    
+    /* Warnings */
+    .warnings {
+      margin: 16px 0;
+      padding: 12px;
+      background: #1a1a0a;
+      border: 1px solid var(--warning);
+      border-radius: 6px;
+    }
+    
+    .warnings p {
+      font-size: 11px;
+      color: var(--warning);
+      margin: 0 0 4px 0;
+    }
+    
+    .warnings p:last-child { margin: 0; }
+    
+    .link-group { 
+      margin-top: 20px; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 8px; 
+    }
+    
+    .link-group a { 
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--text); 
+      text-decoration: none; 
+      font-size: 13px; 
+      padding: 12px 14px;
+      background: #0a0a0a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+    
+    .link-group a:hover { 
+      border-color: #444;
+      transform: translateX(2px);
+    }
+    
+    .link-group a span { color: var(--mute); }
+    
+    .schedule-note {
+      text-align: center;
+      font-size: 11px;
+      color: var(--mute);
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      line-height: 1.6;
+    }
+    
+    /* Developer Section */
+    .dev-section {
+      margin-top: 24px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+    }
+    
+    .dev-toggle {
+      font-family: 'Geist Mono', monospace;
+      font-size: 11px;
+      color: var(--mute);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .dev-toggle:hover { color: var(--text); }
+    
+    .dev-content {
+      margin-top: 12px;
+      display: none;
+    }
+    
+    .dev-content.open { display: block; }
+    
+    .dev-link {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      font-size: 11px;
+      color: var(--mute);
+      text-decoration: none;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .dev-link:last-child { border-bottom: none; }
+    .dev-link:hover { color: var(--text); }
+    .dev-link span { font-family: 'Geist Mono', monospace; }
+    
+    /* Error State */
+    .error-box {
+      background: #1a0a0a;
+      border: 1px solid #ef4444;
+      border-radius: 6px;
+      padding: 16px;
+      margin-top: 20px;
+    }
+    
+    .error-box h3 {
+      color: #ef4444;
+      font-size: 12px;
+      margin: 0 0 8px 0;
+      font-family: 'Geist Mono', monospace;
+    }
+    
+    .error-box p {
+      color: var(--mute);
+      font-size: 12px;
+      margin: 0;
+      line-height: 1.5;
+    }
+    
+    .retry-btn {
+      margin-top: 16px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    
+    .retry-btn:hover:not(:disabled) { border-color: #444; }
+    
+    .credits {
+      text-align: center;
+      font-size: 10px;
+      color: var(--mute);
+      margin-top: 16px;
+    }
+    
+    .credits a { color: var(--mute); text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- VIEW: Setup -->
+  <div id="viewAuth" class="view active">
+    <h1>Job Co-Pilot</h1>
+    <h2>Setup</h2>
+    
+    <div class="value-prop">
+      <span>50 sent emails</span> → job threads → <span>daily plays</span><br>
+      Runs at 6am. Digest email at 7am.
+    </div>
+    
+    <!-- API Key Section -->
+    <div class="section-label">Connect AI</div>
+    
+    <div id="groqSection">
+      <input 
+        type="password" 
+        id="groqKey" 
+        placeholder="gsk_..." 
+        oninput="validateInputs()"
+        autocomplete="off"
+      >
+      <div class="input-hint">
+        <a href="https://console.groq.com/keys" target="_blank">Get Groq key →</a>
+        <span class="toggle-link" onclick="toggleGemini()">or use Gemini</span>
+      </div>
+    </div>
+    
+    <div id="geminiSection" class="hidden">
+      <input 
+        type="password" 
+        id="geminiKey" 
+        placeholder="AIza..." 
+        oninput="validateInputs()"
+        autocomplete="off"
+      >
+      <div class="input-hint">
+        <a href="https://aistudio.google.com/app/apikey" target="_blank">Get Gemini key →</a>
+        <span class="toggle-link" onclick="toggleGemini()">use Groq instead</span>
+      </div>
+    </div>
+    
+    <!-- Context Section -->
+    <div class="section-label">Personalize (optional)</div>
+    
+    <textarea 
+      id="linkedinPaste" 
+      rows="3" 
+      placeholder="Cmd+A your LinkedIn profile page..."
+      oninput="validateContext('linkedin')"
+    ></textarea>
+    <div id="linkedinStatus" class="input-status"></div>
+    
+    <textarea 
+      id="resumePaste" 
+      rows="3" 
+      placeholder="Paste resume text..."
+      oninput="validateContext('resume')"
+    ></textarea>
+    <div id="resumeStatus" class="input-status"></div>
+    
+    <button id="btnInit" disabled onclick="startSetup()">
+      Initialize
+    </button>
+  </div>
+
+  <!-- VIEW: Progress -->
+  <div id="viewProgress" class="view">
+    <h1>Job Co-Pilot</h1>
+    <h2>Setting up...</h2>
+    
+    <div class="progress-container">
+      <div class="step" id="step1">
+        <div class="step-icon pending">○</div>
+        <div class="step-content">
+          <div class="step-title">Validating API key</div>
+        </div>
+      </div>
+      
+      <div class="step" id="step2">
+        <div class="step-icon pending">○</div>
+        <div class="step-content">
+          <div class="step-title">Creating Dashboard</div>
+        </div>
+      </div>
+      
+      <div class="step" id="step3">
+        <div class="step-icon pending">○</div>
+        <div class="step-content">
+          <div class="step-title">Scanning Gmail</div>
+        </div>
+      </div>
+      
+      <div class="step" id="step4">
+        <div class="step-icon pending">○</div>
+        <div class="step-content">
+          <div class="step-title">Classifying threads</div>
+        </div>
+      </div>
+      
+      <div class="step" id="step5">
+        <div class="step-icon pending">○</div>
+        <div class="step-content">
+          <div class="step-title">Setting up triggers</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW: Success -->
+  <div id="viewSuccess" class="view">
+    <div class="success-header">
+      <div class="success-icon">✓</div>
+      <h1>Job Co-Pilot</h1>
+      <h2>You're set!</h2>
+    </div>
+    
+    <div id="topPlaysSection" class="top-plays"></div>
+    
+    <div id="emptyState" class="empty-state hidden">
+      <p>No sent emails found yet.<br>Start sending and sync from the menu!</p>
+    </div>
+    
+    <div id="warningsSection" class="warnings hidden"></div>
+    
+    <div class="link-group">
+      <a id="sheetLink" href="#" target="_blank">
+        Open Dashboard
+        <span>→</span>
+      </a>
+      <a href="#" onclick="google.script.host.close(); return false;">
+        Close
+        <span>×</span>
+      </a>
+    </div>
+    
+    <div class="schedule-note">
+      ⏰ Syncs daily at 6am · Digest email at 7am
+    </div>
+    
+    <div class="dev-section">
+      <div class="dev-toggle" onclick="toggleDev()">
+        <span id="devArrow">▸</span> Developer
+      </div>
+      <div id="devContent" class="dev-content">
+        <a class="dev-link" href="#" onclick="google.script.run.showDebugSheets(); return false;">
+          _log & _cache <span>Show →</span>
+        </a>
+        <a class="dev-link" id="scriptLink" href="#" target="_blank">
+          Apps Script <span>Open →</span>
+        </a>
+        <a class="dev-link" href="https://github.com/aniketh3014/job-search-copilot" target="_blank">
+          GitHub <span>Repo →</span>
+        </a>
+      </div>
+    </div>
+    
+    <div class="credits">
+      Built by <a href="https://www.linkedin.com/in/anikethmaddipati/" target="_blank">Aniketh Maddipati</a>
+    </div>
+  </div>
+
+  <!-- VIEW: Error -->
+  <div id="viewError" class="view">
+    <h1>Job Co-Pilot</h1>
+    <h2>Setup failed</h2>
+    
+    <div class="error-box">
+      <h3>Error</h3>
+      <p id="errorMessage">Something went wrong.</p>
+    </div>
+    
+    <button class="retry-btn" onclick="location.reload()">
+      Try Again
+    </button>
+  </div>
+  
+</div>
+
+<script>
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  let useGemini = false;
+  let linkedinParsed = null;
+  let resumeParsed = null;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CONTEXT PARSER (mirrors Code.js)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  const ContextParser = {
+    clean(raw, type) {
+      if (!raw || typeof raw !== 'string') return null;
+      
+      let text = raw
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/[^\x20-\x7E\n]/g, '')
+        .trim();
+      
+      if (text.length < 50) return null;
+      if (text.length > 20000) text = text.slice(0, 20000);
+      
+      return type === 'linkedin' ? this._parseLinkedIn(text) : this._parseResume(text);
+    },
+    
+    _parseLinkedIn(text) {
+      const noise = [
+        /Skip to main content/gi, /LinkedIn/gi, /Search/gi, /Messaging/gi,
+        /Notifications/gi, /\bMe\b/g, /\bWork\b/g, /Premium/gi,
+        /Show all \d+ skills/gi, /Show all \d+ experiences/gi,
+        /\d+ followers/gi, /\d+ connections/gi, /Contact info/gi,
+        /Following/gi, /Influencers/gi, /Companies/gi, /Groups/gi,
+        /Newsletters/gi, /Activity/gi, /Posts/gi, /Comments/gi,
+        /See all \d+/gi, /Learn more/gi, /Report this profile/gi,
+        /More actions/gi, /Open to work/gi, /Promoted/gi,
+      ];
+      noise.forEach(re => { text = text.replace(re, ''); });
+      
+      const sections = {};
+      const lines = text.split(/\n/).map(l => l.trim()).filter(l => l.length > 2);
+      
+      if (lines[0]) sections.name = lines[0].slice(0, 100);
+      if (lines[1] && !lines[1].match(/experience|education|skills/i)) {
+        sections.headline = lines[1].slice(0, 200);
+      }
+      
+      const expMatch = text.match(/Experience\s+(.{50,2000}?)(?=Education|Skills|Licenses|$)/is);
+      if (expMatch) sections.experience = expMatch[1].trim().slice(0, 1500);
+      
+      const eduMatch = text.match(/Education\s+(.{20,800}?)(?=Skills|Experience|Licenses|$)/is);
+      if (eduMatch) sections.education = eduMatch[1].trim().slice(0, 500);
+      
+      const skillsMatch = text.match(/Skills\s+(.{10,500}?)(?=Experience|Education|Interests|$)/is);
+      if (skillsMatch) sections.skills = skillsMatch[1].trim().slice(0, 300);
+      
+      if (!sections.name && !sections.experience) return null;
+      
+      return Object.entries(sections)
+        .map(([k, v]) => `${k.toUpperCase()}: ${v}`)
+        .join('\n\n');
+    },
+    
+    _parseResume(text) {
+      const noise = [/Page \d+ of \d+/gi, /Resume/gi, /Curriculum Vitae/gi, /References available/gi];
+      noise.forEach(re => { text = text.replace(re, ''); });
+      
+      const sections = {};
+      
+      const contactMatch = text.match(/^(.{10,300}?)(?=EXPERIENCE|EDUCATION|SUMMARY|OBJECTIVE|SKILLS)/is);
+      if (contactMatch) sections.contact = contactMatch[1].trim().slice(0, 200);
+      
+      const expMatch = text.match(/EXPERIENCE\s*(.{50,3000}?)(?=EDUCATION|SKILLS|PROJECTS|$)/is);
+      if (expMatch) sections.experience = expMatch[1].trim().slice(0, 2000);
+      
+      const eduMatch = text.match(/EDUCATION\s*(.{20,800}?)(?=EXPERIENCE|SKILLS|PROJECTS|$)/is);
+      if (eduMatch) sections.education = eduMatch[1].trim().slice(0, 500);
+      
+      const skillsMatch = text.match(/SKILLS\s*(.{10,500}?)(?=EXPERIENCE|EDUCATION|PROJECTS|$)/is);
+      if (skillsMatch) sections.skills = skillsMatch[1].trim().slice(0, 300);
+      
+      if (!sections.experience && !sections.education) return null;
+      
+      return Object.entries(sections)
+        .map(([k, v]) => `${k.toUpperCase()}: ${v}`)
+        .join('\n\n');
+    },
+    
+    score(parsed) {
+      if (!parsed) return 0;
+      let score = 0;
+      if (parsed.length > 200) score += 20;
+      if (parsed.length > 500) score += 20;
+      if (parsed.length > 1000) score += 10;
+      if (/EXPERIENCE:/i.test(parsed)) score += 20;
+      if (/EDUCATION:/i.test(parsed)) score += 10;
+      if (/SKILLS:/i.test(parsed)) score += 10;
+      if (/NAME:/i.test(parsed) || /CONTACT:/i.test(parsed)) score += 10;
+      return Math.min(score, 100);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // UI HELPERS
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  function toggleGemini() {
+    useGemini = !useGemini;
+    document.getElementById('groqSection').classList.toggle('hidden', useGemini);
+    document.getElementById('geminiSection').classList.toggle('hidden', !useGemini);
+    validateInputs();
+  }
+  
+  function toggleDev() {
+    const content = document.getElementById('devContent');
+    const arrow = document.getElementById('devArrow');
+    content.classList.toggle('open');
+    arrow.textContent = content.classList.contains('open') ? '▾' : '▸';
+  }
+  
+  function showView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+  }
+  
+  function setStepState(stepId, state) {
+    const step = document.getElementById(stepId);
+    const icon = step.querySelector('.step-icon');
+    
+    step.classList.remove('pending');
+    icon.classList.remove('pending', 'running', 'done', 'error');
+    icon.classList.add(state);
+    
+    switch(state) {
+      case 'running': icon.innerHTML = '<div class="spinner"></div>'; break;
+      case 'done': icon.innerHTML = '✓'; break;
+      case 'error': icon.innerHTML = '✕'; break;
+      default: icon.innerHTML = '○';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // VALIDATION
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  function validateInputs() {
+    const groq = document.getElementById('groqKey').value;
+    const gemini = document.getElementById('geminiKey').value;
+    
+    const groqValid = groq.startsWith('gsk_') && groq.length > 20;
+    const geminiValid = gemini.startsWith('AIza') && gemini.length > 20;
+    
+    document.getElementById('groqKey').classList.toggle('valid', groqValid);
+    document.getElementById('geminiKey').classList.toggle('valid', geminiValid);
+    
+    const hasValidKey = useGemini ? geminiValid : groqValid;
+    document.getElementById('btnInit').disabled = !hasValidKey;
+  }
+  
+  function validateContext(type) {
+    const input = document.getElementById(type === 'linkedin' ? 'linkedinPaste' : 'resumePaste');
+    const status = document.getElementById(type === 'linkedin' ? 'linkedinStatus' : 'resumeStatus');
+    const raw = input.value;
+    
+    if (!raw || raw.length < 20) {
+      status.textContent = '';
+      status.className = 'input-status';
+      input.classList.remove('valid', 'invalid');
+      if (type === 'linkedin') linkedinParsed = null;
+      else resumeParsed = null;
+      return;
+    }
+    
+    const parsed = ContextParser.clean(raw, type);
+    const score = ContextParser.score(parsed);
+    
+    if (score >= 30) {
+      status.textContent = `✓ Extracted ${parsed.length} chars`;
+      status.className = 'input-status valid';
+      input.classList.add('valid');
+      input.classList.remove('invalid');
+      if (type === 'linkedin') linkedinParsed = raw;
+      else resumeParsed = raw;
+    } else {
+      status.textContent = 'Could not extract structured data. Try selecting more content.';
+      status.className = 'input-status error';
+      input.classList.add('invalid');
+      input.classList.remove('valid');
+      if (type === 'linkedin') linkedinParsed = null;
+      else resumeParsed = null;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SETUP FLOW
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  function startSetup() {
+    const keys = {
+      groq: useGemini ? null : document.getElementById('groqKey').value,
+      gemini: useGemini ? document.getElementById('geminiKey').value : null
+    };
+    
+    const context = {
+      linkedin: linkedinParsed,
+      resume: resumeParsed
+    };
+    
+    showView('viewProgress');
+    
+    // Start progress animation
+    setStepState('step1', 'running');
+    
+    google.script.run
+      .withSuccessHandler(onSuccess)
+      .withFailureHandler(onError)
+      .saveAndInit(keys, context);
+  }
+  
+  function onSuccess(res) {
+    // Complete all steps
+    ['step1', 'step2', 'step3', 'step4', 'step5'].forEach(s => setStepState(s, 'done'));
+    
+    setTimeout(() => {
+      showView('viewSuccess');
+      
+      // Sheet link
+      document.getElementById('sheetLink').href = res.sheetUrl;
+      
+      // Script link
+      if (res.scriptUrl) {
+        document.getElementById('scriptLink').href = res.scriptUrl;
+      }
+      
+      // Handle empty state
+      if (res.empty) {
+        document.getElementById('emptyState').classList.remove('hidden');
+        document.getElementById('topPlaysSection').classList.add('hidden');
+      } else {
+        // Render top plays
+        const playsHtml = (res.topPlays || []).map(p => `
+          <div class="play-item">
+            <span class="play-status ${p.status === 'Reply Needed' ? 'reply' : 'follow'}">
+              ${p.status === 'Reply Needed' ? 'Reply' : 'Follow'}
+            </span>
+            <span class="play-contact">${p.contact}</span>
+            <span class="play-company">${p.company}</span>
+          </div>
+        `).join('');
+        
+        document.getElementById('topPlaysSection').innerHTML = playsHtml || '<p style="color: var(--mute); font-size: 12px;">All caught up!</p>';
+      }
+      
+      // Show warnings if any
+      if (res.warnings && res.warnings.length > 0) {
+        const warningsHtml = res.warnings.map(w => `<p>⚠️ ${w}</p>`).join('');
+        document.getElementById('warningsSection').innerHTML = warningsHtml;
+        document.getElementById('warningsSection').classList.remove('hidden');
+      }
+      
+    }, 400);
+  }
+  
+  function onError(e) {
+    // Mark current running step as error
+    document.querySelectorAll('.step-icon.running').forEach(icon => {
+      icon.classList.remove('running');
+      icon.classList.add('error');
+      icon.innerHTML = '✕';
+    });
+    
+    setTimeout(() => {
+      showView('viewError');
+      document.getElementById('errorMessage').textContent = e.message || 'Unknown error occurred.';
+    }, 300);
+  }
+  
+  // Animate progress while waiting
+  let progressInterval;
+  function startProgressAnimation() {
+    const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
+    let current = 0;
+    
+    progressInterval = setInterval(() => {
+      if (current > 0) setStepState(steps[current - 1], 'done');
+      if (current < steps.length) {
+        setStepState(steps[current], 'running');
+        current++;
+      } else {
+        clearInterval(progressInterval);
+      }
+    }, 1500);
+  }
+  
+  // Start animation when progress view is shown
+  const observer = new MutationObserver(() => {
+    if (document.getElementById('viewProgress').classList.contains('active')) {
+      startProgressAnimation();
+    } else {
+      clearInterval(progressInterval);
+    }
+  });
+  
+  observer.observe(document.getElementById('viewProgress'), { attributes: true, attributeFilter: ['class'] });
+</script>
+
+</body>
+</html>

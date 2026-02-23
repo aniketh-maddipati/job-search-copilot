@@ -5,25 +5,26 @@ export default [
       languageOptions: {
         ecmaVersion: 2020,
         globals: {
-          SpreadsheetApp: "readonly",
-          GmailApp: "readonly",
+          SpreadsheetApp:    "readonly",
+          GmailApp:          "readonly",
           PropertiesService: "readonly",
-          ScriptApp: "readonly",
-          UrlFetchApp: "readonly",
-          HtmlService: "readonly",
-          Utilities: "readonly",
-          console: "readonly"
+          ScriptApp:         "readonly",
+          UrlFetchApp:       "readonly",
+          HtmlService:       "readonly",
+          ContentService:    "readonly",
+          Utilities:         "readonly",
+          console:           "readonly",
         }
       },
       rules: {
-        "no-undef": "error",
+        "no-undef":       "error",
         "no-unreachable": "error",
-        "no-dupe-keys": "error",
-        "no-redeclare": "error",
-    "no-unused-vars": ["warn", { 
-    "varsIgnorePattern": "^(onOpen|onEdit|doGet|doPost|sync|syncFresh|showSetup|saveAndInit|clearCache|showDebugSheets|hideDebugSheets|createDailyTrigger|removeTriggers)$",
-    "caughtErrors": "none"
-    }]
-        }
+        "no-dupe-keys":   "error",
+        "no-redeclare":   "error",
+        "no-unused-vars": ["warn", {
+          varsIgnorePattern: "^(onOpen|doGet|sync|syncFresh|showSetup|saveAndInit|clearCache|showDebugSheets|hideDebugSheets|createDailyTrigger|removeTriggers|sendDailyDigest|getDebugInfo|Providers)$",
+          caughtErrors: "none"
+        }]
+      }
     }
   ];
