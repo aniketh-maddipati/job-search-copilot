@@ -837,13 +837,16 @@ function sendDailyDigest() {
 
     const formatName = (contact) => contact.split('.')[0].replace(/^\w/, c => c.toUpperCase());
     const threadLink = (id) => `https://mail.google.com/mail/u/0/#all/${id}`; 
-    const replyRows = replyNeeded.slice(0, 3).map(r => ({
-      name: formatName(r.contact),
-      company: r.company,
-      subject: r.subject.slice(0, 30) + (r.subject.length > 30 ? '...' : ''),
-      days: r.days,
-      link: threadLink(r.id)
-    }));
+    const replyRows = replyNeeded.slice(0, 3).map(r => {
+      LOG.info('digest', `ID: ${r.id}, Link: ${threadLink(r.id)}`);
+      return {
+        name: formatName(r.contact),
+        company: r.company,
+        subject: r.subject.slice(0, 30) + (r.subject.length > 30 ? '...' : ''),
+        days: r.days,
+        link: threadLink(r.id)
+      };
+    });
 
     const followRows = followUp.slice(0, 3).map(r => ({
       name: formatName(r.contact),
