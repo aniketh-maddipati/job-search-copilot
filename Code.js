@@ -74,9 +74,6 @@ const CORE = Object.freeze({
   RATE_LIMIT_MS: 60000,
 });
 
-const ALL_HEADERS = [...CORE.HEADERS, ...USER_CONFIG.BLOCKS.map(b => b.label)];
-const ALL_WIDTHS = [...CORE.WIDTHS, ...USER_CONFIG.BLOCKS.map(b => b.width || 100)];
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // LOGGER (Event Log for Debugging)
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -745,7 +742,7 @@ function saveAndInit(keys) {
     if (sheet1 && sheet1.getLastRow() === 0) {
       ss.deleteSheet(sheet1);
     }
-    s
+    
     // 3. Formatting (The "App" look)
     dash.clear(); 
     dash.getRange(1, 1, 1, CORE.HEADERS.length)
