@@ -595,7 +595,7 @@
         <span id="devArrow">▸</span> Developer
       </div>
       <div id="devContent" class="dev-content">
-        <a class="dev-link" href="#" onclick="google.script.run.showDebugSheets(); return false;">
+        <a class="dev-link" href="#" onclick="google.script.run.withSuccessHandler(() => {}).showDebugSheets(); return false;">
           _log & _cache <span>Show →</span>
         </a>
         <a class="dev-link" id="scriptLink" href="#" target="_blank">

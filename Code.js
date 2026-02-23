@@ -876,6 +876,41 @@ function sendDailyDigest() {
   }
 }
 
+function sendWelcomeEmail(sheetUrl, consent) {
+  try {
+    const email = Session.getActiveUser().getEmail();
+    
+    const subject = 'Job Co-Pilot is set up';
+    
+    const body = `Hey,
+
+Your job search dashboard is ready.
+
+What happens now:
+${consent.autoSync ? '• 6am — syncs your sent emails, filters job threads' : '• Manual sync only (auto-sync disabled)'}
+${consent.digest ? '• 7am — digest email with your top plays' : '• No digest emails (disabled)'}
+
+Quick links:
+- Dashboard: ${sheetUrl}
+- Docs: https://github.com/aniketh3014/job-search-copilot
+
+Privacy: Your emails stay in your Google account. The AI only sees thread metadata and generates plays locally. Nothing stored externally except anonymous usage stats.
+
+Questions? Reply here or find me on LinkedIn:
+https://linkedin.com/in/anikethmaddipati
+
+Good luck out there.
+
+— Aniketh`;
+
+    GmailApp.sendEmail(email, subject, body);
+    LOG.info('welcome', 'Sent welcome email');
+  } catch (e) {
+    LOG.warn('welcome', `Failed: ${e.message}`);
+  }
+}
+
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // BOOTSTRAP
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -923,9 +958,6 @@ function saveAndInit(keys, context, consent) {
     dash.setFrozenRows(1);
     CORE.WIDTHS.forEach((w, i) => dash.setColumnWidth(i + 1, w));
 
-    // Triggers
-    const warnings = [];
-    if (consent.autoSync) {
     // Triggers (based on consent)
     const warnings = [];
     if (consent.autoSync) {
@@ -934,7 +966,10 @@ function saveAndInit(keys, context, consent) {
     if (consent.digest) {
       if (!createDigestTrigger()) warnings.push('Digest trigger failed');
     }
-    }
+    
+    // Welcome email
+    sendWelcomeEmail(ss.getUrl(), consent);
+
     // Initial sync
     const { stats, rows } = sync();
 
@@ -998,4 +1033,26 @@ function getDebugInfo() {
 function clearAllProperties() {
   PropertiesService.getScriptProperties().deleteAllProperties();
   SpreadsheetApp.getActiveSpreadsheet().toast('Properties cleared');
+}
+
+function showDebugSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const log = ss.getSheetByName('_log');
+  const cache = ss.getSheetByName('_cache');
+  
+  if (log) log.showSheet();
+  if (cache) cache.showSheet();
+  
+  SpreadsheetApp.getActiveSpreadsheet().toast('Debug sheets visible', '✓');
+}
+
+function hideDebugSheets() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const log = ss.getSheetByName('_log');
+  const cache = ss.getSheetByName('_cache');
+  
+  if (log) log.hideSheet();
+  if (cache) cache.hideSheet();
+  
+  SpreadsheetApp.getActiveSpreadsheet().toast('Debug sheets hidden', '✓');
 }
