@@ -956,14 +956,6 @@ function saveAndInit(keys, context, consent) {
     // Initial sync
     const { stats, rows } = sync();
 
-    // Calculate stats for welcome email
-    const emailStats = {
-      jobThreads: rows.length,
-      replyNeeded: rows.filter(r => r.status.label === 'Reply Needed').length,
-      followUp: rows.filter(r => r.status.label === 'Follow Up').length,
-      waiting: rows.filter(r => r.status.label === 'Waiting').length
-    };
-
     // Track email status
     let welcomeSent = false;
     let digestSent = false;

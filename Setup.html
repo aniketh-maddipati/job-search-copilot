@@ -445,34 +445,35 @@
       <span>50 sent emails</span> → job threads → <span>daily plays</span><br>
       Runs at 6am. Digest email at 7am.
     </div>
-    
-    <!-- API Key Section -->
-    <div class="section-label">Connect AI</div>
 
-    <input 
-      type="password" 
-      id="groqKey" 
-      placeholder="gsk_... (Groq - recommended)"
-      oninput="validateInputs()"
-      autocomplete="off"
-    >
-    <div class="input-hint">
-      <a href="https://console.groq.com/keys" target="_blank">Get Groq key →</a>
-      <span style="color: var(--mute);">Fast & free</span>
-    </div>
+<!-- API Key Section -->
+<div class="section-label">Connect AI <span style="color:#ef4444;">· required</span></div>
+<p style="font-size:11px;color:var(--mute);margin:0 0 12px 0;">Add at least one key. Both = automatic failover.</p>
 
-    <input 
-      type="password" 
-      id="geminiKey" 
-      placeholder="AIza... (Gemini - backup)" 
-      oninput="validateInputs()"
-      autocomplete="off"
-      style="margin-top: 12px;"
-    >
-    <div class="input-hint">
-      <a href="https://aistudio.google.com/app/apikey" target="_blank">Get Gemini key →</a>
-      <span style="color: var(--mute);">Optional fallback</span>
-    </div>
+<input 
+  type="password" 
+  id="groqKey" 
+  placeholder="gsk_..."
+  oninput="validateInputs()"
+  autocomplete="off"
+>
+<div class="input-hint">
+  <a href="https://console.groq.com/keys" target="_blank">Get Groq key →</a>
+  <span style="color: var(--mute);">Recommended</span>
+</div>
+
+<input 
+  type="password" 
+  id="geminiKey" 
+  placeholder="AIza..."
+  oninput="validateInputs()"
+  autocomplete="off"
+  style="margin-top: 8px;"
+>
+<div class="input-hint">
+  <a href="https://aistudio.google.com/app/apikey" target="_blank">Get Gemini key →</a>
+  <span style="color: var(--mute);">Or use this</span>
+</div>
     
     <!-- Context Section -->
     <div class="section-label">Personalize (optional)</div>
