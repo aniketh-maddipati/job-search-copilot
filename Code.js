@@ -874,7 +874,7 @@ function sendDailyDigest() {
   }
 }
 
-function sendWelcomeEmail(sheetUrl, consent, stats) {
+function sendWelcomeEmail(sheetUrl, consent) {
   try {
     const email = App.session.getEmail();
     if (!email) {
@@ -882,37 +882,19 @@ function sendWelcomeEmail(sheetUrl, consent, stats) {
       throw new Error('Could not determine user email');
     }
     
-    const subject = "You're set up — here's your first snapshot";
+    const template = HtmlService.createTemplateFromFile('WelcomeEmail');
+    template.sheetUrl = sheetUrl;
+    template.consent = consent;
     
-    const body = `Hey,
+    const html = template.evaluate().getContent();
+    const subject = "You're all set — Job Co-Pilot";
+    const plainText = `Your dashboard is ready.\n\nOpen Dashboard: ${sheetUrl}`;
 
-Thanks for trying Job Co-Pilot.
-
-Your dashboard is ready with ${stats.jobThreads} job threads:
-- ${stats.replyNeeded} need your reply
-- ${stats.followUp} ready for follow-up
-- ${stats.waiting} waiting on them
-
-→ Open Dashboard: ${sheetUrl}
-
-What happens next:
-${consent.autoSync ? '• 6am daily — syncs new sent emails' : '• Manual sync only'}
-${consent.digest ? '• 7am daily — digest email with your top plays' : '• No daily digest'}
-
-Quick tip: Mark threads "Done" to hide stale conversations.
-
-Privacy: Your emails never leave your Google account. The AI only sees thread metadata.
-
-Built this while job searching myself. Hope it helps you too.
-
-— Aniketh
-https://linkedin.com/in/anikethmaddipati`;
-
-    GmailApp.sendEmail(email, subject, body);
+    GmailApp.sendEmail(email, subject, plainText, { htmlBody: html });
     LOG.info('welcome', `Sent to ${email.slice(0, 3)}...`);
   } catch (e) {
     LOG.error('welcome', e.message);
-    throw e;  // Re-throw so saveAndInit catches it
+    throw e;
   }
 }
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -988,7 +970,7 @@ function saveAndInit(keys, context, consent) {
 
     // Welcome email (after sync so we have stats)
     try {
-      sendWelcomeEmail(ss.getUrl(), consent, emailStats);
+      sendWelcomeEmail(ss.getUrl(), consent);
       welcomeSent = true;
     } catch (e) {
       LOG.warn('welcome', `Failed: ${e.message}`);

@@ -553,6 +553,13 @@
           <div class="step-title">Setting up triggers</div>
         </div>
       </div>
+      
+      <div class="step" id="step6">
+        <div class="step-icon pending">○</div>
+        <div class="step-content">
+          <div class="step-title">Sending emails</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -848,8 +855,7 @@ function startSetup() {
   
 function onSuccess(res) {
   // Complete all steps
-  ['step1', 'step2', 'step3', 'step4', 'step5'].forEach(s => setStepState(s, 'done'));
-  
+  ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'].forEach(s => setStepState(s, 'done'));  
   setTimeout(() => {
     showView('viewSuccess');
     
@@ -921,7 +927,7 @@ function onSuccess(res) {
   // Animate progress while waiting
   let progressInterval;
   function startProgressAnimation() {
-    const steps = ['step1', 'step2', 'step3', 'step4', 'step5'];
+    const steps = ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'];
     let current = 0;
     
     progressInterval = setInterval(() => {
