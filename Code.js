@@ -367,7 +367,7 @@ const Email = {
   parseBasic(thread) {
     const id = thread.getId();
     const msgs = thread.getMessages();
-    const to = msgs[0].getTo().toLowerCase();
+    const to = msgs[0].getTo().toLowerCase().replace(/["']/g, '');
     const domain = (to.match(/@([\w.-]+)/) || [])[1]?.split('.')[0] || '';
     return { id, thread, to, domain, subject: msgs[0].getSubject() };
   },
@@ -377,7 +377,7 @@ const Email = {
     const last = msgs[msgs.length - 1];
     const id = thread.getId();
     const messageCount = msgs.length;
-    const to = msgs[0].getTo().toLowerCase();
+    const to = msgs[0].getTo().toLowerCase().replace(/["']/g, '');
     const fromMe = last.getFrom().toLowerCase().includes(myEmail);
     const days = Math.floor((Date.now() - last.getDate().getTime()) / 86400000);
     const domain = (to.match(/@([\w.-]+)/) || [])[1]?.split('.')[0] || '';
