@@ -891,7 +891,7 @@ ${consent.digest ? '• 7am — digest email with your top plays' : '• No dige
 
 Quick links:
 - Dashboard: ${sheetUrl}
-- Docs: https://github.com/aniketh3014/job-search-copilot
+- Docs: https://github.com/aniketh-maddipati/job-search-copilot
 
 Privacy: Your emails stay in your Google account. The AI only sees thread metadata and generates plays locally. Nothing stored externally except anonymous usage stats.
 
@@ -923,8 +923,8 @@ function saveAndInit(keys, context, consent) {
 
     if (!keys.groq && !keys.gemini) throw new Error('Please provide at least one API key');
 
-    if (keys.groq) props.setProperty('GROQ_KEY', keys.groq);
-    if (keys.gemini) props.setProperty('GEMINI_KEY', keys.gemini);
+    if (keys.groq) App.props.set('GROQ_KEY', keys.groq);
+    if (keys.gemini) App.props.set('GEMINI_KEY', keys.gemini);
 
     // Test key
     const provider = AI.selectProvider(keys);

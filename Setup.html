@@ -598,8 +598,8 @@
         <a class="dev-link" id="scriptLink" href="#" target="_blank">
           Apps Script <span>Open →</span>
         </a>
-        <a class="dev-link" href="https://github.com/aniketh3014/job-search-copilot" target="_blank">
-          GitHub <span>Repo →</span>
+<!-- Line ~280 - in dev-content -->
+<a class="dev-link" href="https://github.com/aniketh-maddipati/job-search-copilot" target="_blank">          GitHub <span>Repo →</span>
         </a>
       </div>
     </div>
@@ -631,7 +631,6 @@
   // STATE
   // ═══════════════════════════════════════════════════════════════════════════
   
-  let useGemini = false;
   let linkedinParsed = null;
   let resumeParsed = null;
 
@@ -735,12 +734,7 @@
   // UI HELPERS
   // ═══════════════════════════════════════════════════════════════════════════
   
-  function toggleGemini() {
-    useGemini = !useGemini;
-    document.getElementById('groqSection').classList.toggle('hidden', useGemini);
-    document.getElementById('geminiSection').classList.toggle('hidden', !useGemini);
-    validateInputs();
-  }
+
   
   function toggleDev() {
     const content = document.getElementById('devContent');
