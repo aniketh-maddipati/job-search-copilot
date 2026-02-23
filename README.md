@@ -1,7 +1,6 @@
 # Job Co-Pilot
 
 ![Version](https://img.shields.io/github/v/release/aniketh-maddipati/job-search-copilot)
-![License](https://img.shields.io/github/license/aniketh-maddipati/job-search-copilot)
 
 An AI-powered job search tracker that lives in Google Sheets.
 
