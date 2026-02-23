@@ -4,16 +4,20 @@
   <base target="_top">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root { 
-      --bg: #000; 
-      --border: #222; 
-      --text: #ededed; 
-      --mute: #666; 
-      --accent: #fff;
-      --success: #4ade80;
-      --warning: #fbbf24;
+      --bg: #f5f5f5;
+      --card: #ffffff;
+      --border: #eeeeee;
+      --text: #111111;
+      --mute: #888888;
+      --accent: #111111;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --reply: #e11d48;
+      --follow: #ea580c;
     }
     
     * { box-sizing: border-box; }
@@ -21,77 +25,94 @@
     body { 
       background: var(--bg); 
       color: var(--text); 
-      font-family: 'Inter', sans-serif; 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; 
       margin: 0; 
-      padding: 24px;
+      padding: 20px;
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
     
     .container { 
       width: 100%; 
       max-width: 400px; 
       margin: 0 auto;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 32px;
     }
     
     h1 { 
-      font-family: 'Geist Mono', monospace; 
       font-size: 12px; 
       text-transform: uppercase; 
-      letter-spacing: 0.15em; 
-      margin-bottom: 8px; 
-      color: var(--mute); 
+      letter-spacing: 0.12em; 
+      margin: 0 0 8px 0; 
+      color: var(--mute);
+      font-weight: 600;
     }
     
     h2 {
-      font-family: 'Inter', sans-serif;
-      font-size: 20px;
+      font-size: 24px;
       font-weight: 600;
-      margin: 0 0 16px 0;
+      margin: 0 0 20px 0;
       color: var(--text);
     }
     
     .value-prop {
-      font-family: 'Geist Mono', monospace;
-      font-size: 11px;
+      font-size: 14px;
       color: var(--mute);
-      margin-bottom: 24px;
+      margin-bottom: 28px;
       line-height: 1.6;
     }
     
-    .value-prop span { color: var(--text); }
+    .value-prop strong { color: var(--text); }
     
     .section-label {
-      font-family: 'Geist Mono', monospace;
-      font-size: 10px;
+      font-size: 12px;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.08em;
       color: var(--mute);
-      margin: 24px 0 12px 0;
+      margin: 28px 0 12px 0;
+      font-weight: 600;
     }
     
     .section-label:first-of-type { margin-top: 0; }
     
-    input, textarea { 
-      width: 100%; 
-      background: #0a0a0a; 
-      border: 1px solid var(--border); 
-      color: #fff; 
-      padding: 12px; 
-      font-family: 'Geist Mono', monospace; 
-      font-size: 13px; 
-      border-radius: 6px; 
-      margin-bottom: 8px; 
-      outline: none;
-      transition: border-color 0.2s;
-      resize: none;
+    .section-hint {
+      font-size: 13px;
+      color: var(--mute);
+      margin: 0 0 12px 0;
     }
     
-    input:focus, textarea:focus { border-color: #444; }
+    input, textarea { 
+      width: 100%; 
+      background: #fafafa; 
+      border: 1.5px solid var(--border); 
+      color: var(--text); 
+      padding: 14px 16px; 
+      font-family: inherit;
+      font-size: 14px; 
+      border-radius: 10px; 
+      margin-bottom: 8px; 
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    
+    input::placeholder, textarea::placeholder {
+      color: #bbbbbb;
+    }
+    
+    input:focus, textarea:focus { 
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+    }
+    
     input.valid, textarea.valid { border-color: var(--success); }
-    input.invalid, textarea.invalid { border-color: #ef4444; }
+    input.invalid, textarea.invalid { border-color: var(--error); }
+    
+    textarea { resize: none; }
     
     .input-hint {
-      font-size: 11px;
+      font-size: 12px;
       color: var(--mute);
       margin-bottom: 16px;
       display: flex;
@@ -99,42 +120,39 @@
       align-items: center;
     }
     
-    .input-hint a { color: var(--text); text-decoration: underline; }
+    .input-hint a { 
+      color: var(--text); 
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .input-hint a:hover { text-decoration: underline; }
     
     .input-status {
-      font-size: 11px;
+      font-size: 12px;
       margin-bottom: 12px;
-      min-height: 16px;
+      min-height: 18px;
     }
     
     .input-status.valid { color: var(--success); }
-    .input-status.error { color: #ef4444; }
-    
-    .toggle-link {
-      font-size: 11px;
-      color: var(--mute);
-      cursor: pointer;
-      margin-bottom: 16px;
-      display: inline-block;
-    }
-    
-    .toggle-link:hover { color: var(--text); }
+    .input-status.error { color: var(--error); }
     
     .consent-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 12px;
-      color: var(--mute);
-      margin-bottom: 10px;
+      gap: 12px;
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 12px;
       cursor: pointer;
     }
     
     .consent-row input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      accent-color: var(--success);
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent);
       cursor: pointer;
+      margin: 0;
     }
     
     .consent-row span { flex: 1; }
@@ -144,18 +162,16 @@
     button { 
       width: 100%; 
       background: var(--accent); 
-      color: #000; 
+      color: #ffffff; 
       border: none; 
-      padding: 14px; 
-      font-family: 'Geist Mono', monospace; 
-      font-size: 12px; 
+      padding: 16px; 
+      font-family: inherit;
+      font-size: 16px; 
       font-weight: 600; 
-      border-radius: 6px; 
+      border-radius: 10px; 
       cursor: pointer; 
       transition: all 0.2s;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-top: 8px;
+      margin-top: 12px;
     }
     
     button:hover:not(:disabled) { 
@@ -164,7 +180,7 @@
     }
     
     button:disabled { 
-      opacity: 0.2; 
+      opacity: 0.3; 
       cursor: not-allowed; 
       transform: none;
     }
@@ -178,31 +194,31 @@
     .step {
       display: flex;
       align-items: flex-start;
-      gap: 12px;
-      padding: 10px 0;
+      gap: 14px;
+      padding: 14px 0;
       border-bottom: 1px solid var(--border);
     }
     
     .step:last-child { border-bottom: none; }
     
     .step-icon {
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      font-size: 12px;
+      font-size: 14px;
     }
     
-    .step-icon.pending { color: var(--mute); }
+    .step-icon.pending { color: #cccccc; }
     .step-icon.running { color: var(--warning); }
     .step-icon.done { color: var(--success); }
-    .step-icon.error { color: #ef4444; }
+    .step-icon.error { color: var(--error); }
     
     .spinner {
-      width: 14px;
-      height: 14px;
+      width: 16px;
+      height: 16px;
       border: 2px solid var(--border);
       border-top-color: var(--warning);
       border-radius: 50%;
@@ -213,7 +229,7 @@
 
     .loading-dots {
       display: inline-flex;
-      margin-left: 2px;
+      margin-left: 3px;
     }
 
     .loading-dots span {
@@ -226,72 +242,80 @@
 
     @keyframes bounce {
       0%, 80%, 100% { transform: translateY(0); }
-      40% { transform: translateY(-5px); }
+      40% { transform: translateY(-4px); }
     }
 
-.step-content { flex: 1; }
+    .step-content { flex: 1; }
     
     .step-title {
-      font-family: 'Geist Mono', monospace;
-      font-size: 11px;
+      font-size: 14px;
       color: var(--text);
+      font-weight: 500;
     }
     
     .step.pending .step-title { color: var(--mute); }
     
+    .step-subtitle {
+      font-size: 12px;
+      color: var(--mute);
+      margin-top: 4px;
+    }
+    
     /* Success State */
     .success-header {
       text-align: center;
-      padding: 16px 0;
+      padding: 20px 0;
     }
     
     .success-icon {
-      width: 40px;
-      height: 40px;
+      width: 48px;
+      height: 48px;
       background: var(--success);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 12px;
-      color: #000;
-      font-size: 20px;
+      margin: 0 auto 16px;
+      color: #ffffff;
+      font-size: 24px;
     }
     
     /* Top Plays */
     .top-plays {
-      margin: 20px 0;
+      margin: 24px 0;
     }
     
     .play-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
-      background: #0a0a0a;
+      gap: 12px;
+      padding: 14px 16px;
+      background: #fafafa;
       border: 1px solid var(--border);
-      border-radius: 6px;
-      margin-bottom: 8px;
+      border-radius: 10px;
+      margin-bottom: 10px;
     }
     
     .play-status {
-      font-size: 10px;
-      font-family: 'Geist Mono', monospace;
-      padding: 2px 6px;
-      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
       text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
     
-    .play-status.reply { background: #fce8e6; color: #c5221f; }
-    .play-status.follow { background: #fef7e0; color: #e37400; }
+    .play-status.reply { background: #fce8e6; color: var(--reply); }
+    .play-status.follow { background: #fef7e0; color: var(--follow); }
     
     .play-contact {
-      font-size: 13px;
+      font-size: 14px;
+      font-weight: 500;
       color: var(--text);
     }
     
     .play-company {
-      font-size: 11px;
+      font-size: 13px;
       color: var(--mute);
       margin-left: auto;
     }
@@ -299,41 +323,46 @@
     /* Empty State */
     .empty-state {
       text-align: center;
-      padding: 24px;
-      background: #0a0a0a;
+      padding: 28px;
+      background: #fafafa;
       border: 1px solid var(--border);
-      border-radius: 8px;
-      margin: 20px 0;
+      border-radius: 12px;
+      margin: 24px 0;
     }
     
     .empty-state p {
-      font-size: 13px;
+      font-size: 14px;
       color: var(--mute);
       margin: 0;
+      line-height: 1.6;
     }
     
     /* Warnings */
     .warnings {
-      margin: 16px 0;
-      padding: 12px;
-      background: #1a1a0a;
-      border: 1px solid var(--warning);
-      border-radius: 6px;
+      margin: 20px 0;
+      padding: 16px;
+      background: #fefce8;
+      border: 1px solid #fef08a;
+      border-radius: 10px;
     }
     
     .warnings p {
-      font-size: 11px;
-      color: var(--warning);
-      margin: 0 0 4px 0;
+      font-size: 13px;
+      color: #854d0e;
+      margin: 0 0 6px 0;
     }
     
     .warnings p:last-child { margin: 0; }
     
+    .warnings p[style*="success"] {
+      color: var(--success) !important;
+    }
+    
     .link-group { 
-      margin-top: 20px; 
+      margin-top: 24px; 
       display: flex; 
       flex-direction: column; 
-      gap: 8px; 
+      gap: 10px; 
     }
     
     .link-group a { 
@@ -342,27 +371,39 @@
       justify-content: space-between;
       color: var(--text); 
       text-decoration: none; 
-      font-size: 13px; 
-      padding: 12px 14px;
-      background: #0a0a0a;
-      border: 1px solid var(--border);
-      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 16px 18px;
+      background: var(--accent);
+      color: #ffffff;
+      border-radius: 10px;
       transition: all 0.2s;
     }
     
-    .link-group a:hover { 
-      border-color: #444;
-      transform: translateX(2px);
+    .link-group a:first-child {
+      background: var(--accent);
+      color: #ffffff;
     }
     
-    .link-group a span { color: var(--mute); }
+    .link-group a:last-child {
+      background: #fafafa;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    
+    .link-group a:hover { 
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+    
+    .link-group a span { opacity: 0.7; }
     
     .schedule-note {
       text-align: center;
-      font-size: 11px;
+      font-size: 13px;
       color: var(--mute);
-      margin-top: 20px;
-      padding-top: 16px;
+      margin-top: 24px;
+      padding-top: 20px;
       border-top: 1px solid var(--border);
       line-height: 1.6;
     }
@@ -371,23 +412,23 @@
     .dev-section {
       margin-top: 24px;
       border-top: 1px solid var(--border);
-      padding-top: 16px;
+      padding-top: 20px;
     }
     
     .dev-toggle {
-      font-family: 'Geist Mono', monospace;
-      font-size: 11px;
+      font-size: 13px;
       color: var(--mute);
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 6px;
+      font-weight: 500;
     }
     
     .dev-toggle:hover { color: var(--text); }
     
     .dev-content {
-      margin-top: 12px;
+      margin-top: 16px;
       display: none;
     }
     
@@ -397,8 +438,8 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 0;
-      font-size: 11px;
+      padding: 12px 0;
+      font-size: 13px;
       color: var(--mute);
       text-decoration: none;
       border-bottom: 1px solid var(--border);
@@ -406,48 +447,57 @@
     
     .dev-link:last-child { border-bottom: none; }
     .dev-link:hover { color: var(--text); }
-    .dev-link span { font-family: 'Geist Mono', monospace; }
+    .dev-link span { font-weight: 500; }
     
     /* Error State */
     .error-box {
-      background: #1a0a0a;
-      border: 1px solid #ef4444;
-      border-radius: 6px;
-      padding: 16px;
-      margin-top: 20px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 24px;
     }
     
     .error-box h3 {
-      color: #ef4444;
-      font-size: 12px;
+      color: var(--error);
+      font-size: 14px;
       margin: 0 0 8px 0;
-      font-family: 'Geist Mono', monospace;
+      font-weight: 600;
     }
     
     .error-box p {
-      color: var(--mute);
-      font-size: 12px;
+      color: #991b1b;
+      font-size: 13px;
       margin: 0;
       line-height: 1.5;
     }
     
     .retry-btn {
-      margin-top: 16px;
-      background: transparent;
+      margin-top: 20px;
+      background: #fafafa;
       border: 1px solid var(--border);
       color: var(--text);
     }
     
-    .retry-btn:hover:not(:disabled) { border-color: #444; }
+    .retry-btn:hover:not(:disabled) { 
+      border-color: #cccccc;
+      background: #f5f5f5;
+    }
     
     .credits {
       text-align: center;
-      font-size: 10px;
+      font-size: 13px;
       color: var(--mute);
-      margin-top: 16px;
+      margin-top: 20px;
     }
     
-    .credits a { color: var(--mute); text-decoration: underline; }
+    .credits a { 
+      color: var(--text); 
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .credits a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -460,75 +510,73 @@
     <h2>Setup</h2>
     
     <div class="value-prop">
-      <span>50 sent emails</span> → job threads → <span>daily plays</span><br>
-      Runs at 6am. Digest email at 7am.
+      <strong>50 sent emails</strong> → job threads → <strong>daily plays</strong><br>
+      Syncs at 6am. Digest email at 7am.
     </div>
 
-<!-- API Key Section -->
-<div class="section-label">Connect AI <span style="color:#ef4444;">· required</span></div>
-<p style="font-size:11px;color:var(--mute);margin:0 0 12px 0;">Add at least one key. Both = automatic failover.</p>
+    <!-- API Key Section -->
+    <div class="section-label">Connect AI <span style="color:var(--error);">· required</span></div>
+    <p class="section-hint">Add at least one key. Both = automatic failover.</p>
 
-<input 
-  type="password" 
-  id="groqKey" 
-  placeholder="gsk_..."
-  oninput="validateInputs()"
-  autocomplete="off"
->
-<div class="input-hint">
-  <a href="https://console.groq.com/keys" target="_blank">Get Groq key →</a>
-  <span style="color: var(--mute);">Recommended</span>
-</div>
+    <input 
+      type="password" 
+      id="groqKey" 
+      placeholder="gsk_..."
+      oninput="validateInputs()"
+      autocomplete="off"
+    >
+    <div class="input-hint">
+      <a href="https://console.groq.com/keys" target="_blank">Get Groq key →</a>
+      <span>Recommended</span>
+    </div>
 
-<input 
-  type="password" 
-  id="geminiKey" 
-  placeholder="AIza..."
-  oninput="validateInputs()"
-  autocomplete="off"
-  style="margin-top: 8px;"
->
-<div class="input-hint">
-  <a href="https://aistudio.google.com/app/apikey" target="_blank">Get Gemini key →</a>
-  <span style="color: var(--mute);">Or use this</span>
-</div>
+    <input 
+      type="password" 
+      id="geminiKey" 
+      placeholder="AIza..."
+      oninput="validateInputs()"
+      autocomplete="off"
+    >
+    <div class="input-hint">
+      <a href="https://aistudio.google.com/app/apikey" target="_blank">Get Gemini key →</a>
+      <span>Or use this</span>
+    </div>
     
     <!-- Context Section -->
-    <div class="section-label">Personalize (optional)</div>
+    <div class="section-label">Personalize <span style="color:var(--mute);">· optional</span></div>
     
     <textarea 
       id="linkedinPaste" 
       rows="3" 
-      placeholder="Cmd+A your LinkedIn profile page..."
+      placeholder="Paste your LinkedIn profile..."
       oninput="validateContext('linkedin')"
     ></textarea>
     <div id="linkedinStatus" class="input-status"></div>
     
     <textarea 
-    id="resumePaste" 
-    rows="3" 
-    placeholder="Paste resume text..."
-    oninput="validateContext('resume')"
-  >
-</textarea>
-  <div id="resumeStatus" class="input-status"></div>
+      id="resumePaste" 
+      rows="3" 
+      placeholder="Paste resume text..."
+      oninput="validateContext('resume')"
+    ></textarea>
+    <div id="resumeStatus" class="input-status"></div>
   
-  <!-- Consent Section -->
-  <div class="section-label">Permissions</div>
-  
-  <label class="consent-row">
-    <input type="checkbox" id="consentDigest" onchange="validateInputs()">
-    <span>Send me a daily digest email at 7am</span>
-  </label>
-  
-  <label class="consent-row">
-    <input type="checkbox" id="consentSync" checked onchange="validateInputs()">
-    <span>Auto-sync my sent emails daily at 6am</span>
-  </label>
-  
-  <button id="btnInit" disabled onclick="startSetup()">
-    Initialize
-  </button>
+    <!-- Consent Section -->
+    <div class="section-label">Permissions</div>
+    
+    <label class="consent-row">
+      <input type="checkbox" id="consentDigest" onchange="validateInputs()">
+      <span>Send me a daily digest email at 7am</span>
+    </label>
+    
+    <label class="consent-row">
+      <input type="checkbox" id="consentSync" checked onchange="validateInputs()">
+      <span>Auto-sync my sent emails daily at 6am</span>
+    </label>
+    
+    <button id="btnInit" disabled onclick="startSetup()">
+      Initialize
+    </button>
 
   </div>
 
@@ -577,7 +625,7 @@
         <div class="step-icon pending">○</div>
         <div class="step-content">
           <div class="step-title">Sending emails</div>
-          <div class="step-subtitle hidden" id="step6Subtitle" style="font-size:10px;color:var(--mute);margin-top:4px;">This may take a minute...</div>
+          <div class="step-subtitle hidden" id="step6Subtitle">This may take a minute...</div>
         </div>
       </div>
     </div>
@@ -588,13 +636,13 @@
     <div class="success-header">
       <div class="success-icon">✓</div>
       <h1>Job Co-Pilot</h1>
-      <h2>You're set!</h2>
+      <h2>You're all set</h2>
     </div>
     
     <div id="topPlaysSection" class="top-plays"></div>
     
     <div id="emptyState" class="empty-state hidden">
-      <p>No sent emails found yet.<br>Start sending and sync from the menu!</p>
+      <p>No job threads found yet.<br>Start sending emails and sync from the menu.</p>
     </div>
     
     <div id="warningsSection" class="warnings hidden"></div>
@@ -611,7 +659,7 @@
     </div>
     
     <div class="schedule-note">
-      ⏰ Syncs daily at 6am · Digest email at 7am
+      Syncs daily at 6am · Digest email at 7am
     </div>
     
     <div class="dev-section">
@@ -625,14 +673,14 @@
         <a class="dev-link" id="scriptLink" href="#" target="_blank">
           Apps Script <span>Open →</span>
         </a>
-<!-- Line ~280 - in dev-content -->
-<a class="dev-link" href="https://github.com/aniketh-maddipati/job-search-copilot" target="_blank">          GitHub <span>Repo →</span>
+        <a class="dev-link" href="https://github.com/aniketh-maddipati/job-search-copilot" target="_blank">
+          GitHub <span>Repo →</span>
         </a>
       </div>
     </div>
     
     <div class="credits">
-      Built by <a href="https://www.linkedin.com/in/anikethmaddipati/" target="_blank">Aniketh Maddipati</a>
+      Built by <a href="https://linkedin.com/in/anikethmaddipati" target="_blank">Aniketh Maddipati</a>
     </div>
   </div>
 
@@ -662,7 +710,7 @@
   let resumeParsed = null;
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // CONTEXT PARSER (mirrors Code.js)
+  // CONTEXT PARSER
   // ═══════════════════════════════════════════════════════════════════════════
   
   const ContextParser = {
@@ -761,8 +809,6 @@
   // UI HELPERS
   // ═══════════════════════════════════════════════════════════════════════════
   
-
-  
   function toggleDev() {
     const content = document.getElementById('devContent');
     const arrow = document.getElementById('devArrow');
@@ -805,7 +851,6 @@
     document.getElementById('groqKey').classList.toggle('valid', groqValid);
     document.getElementById('geminiKey').classList.toggle('valid', geminiValid);
     
-    // At least one valid key required
     const hasValidKey = groqValid || geminiValid;
     document.getElementById('btnInit').disabled = !hasValidKey;
   }
@@ -835,7 +880,7 @@
       if (type === 'linkedin') linkedinParsed = raw;
       else resumeParsed = raw;
     } else {
-      status.textContent = 'Could not extract structured data. Try selecting more content.';
+      status.textContent = 'Could not extract structured data.';
       status.className = 'input-status error';
       input.classList.add('invalid');
       input.classList.remove('valid');
@@ -848,128 +893,118 @@
   // SETUP FLOW
   // ═══════════════════════════════════════════════════════════════════════════
   
-function startSetup() {
-  const keys = {
-    groq: document.getElementById('groqKey').value || null,
-    gemini: document.getElementById('geminiKey').value || null
-  };
-  
-  const context = {
-    linkedin: linkedinParsed,
-    resume: resumeParsed
-  };
-  
-  const consent = {
-    digest: document.getElementById('consentDigest').checked,
-    autoSync: document.getElementById('consentSync').checked
-  };
-  
-  showView('viewProgress');
-  setStepState('step1', 'running');
-  
-  google.script.run
-    .withSuccessHandler(onSuccess)
-    .withFailureHandler(onError)
-    .saveAndInit(keys, context, consent);
-}
-  
-function onSuccess(res) {
-  // Stop animation and complete all steps
-  clearInterval(progressInterval);
-  ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'].forEach(s => setStepState(s, 'done'));
-  
-  setTimeout(() => {
-    showView('viewSuccess');
+  function startSetup() {
+    const keys = {
+      groq: document.getElementById('groqKey').value || null,
+      gemini: document.getElementById('geminiKey').value || null
+    };
     
-    // Sheet link
-    document.getElementById('sheetLink').href = res.sheetUrl;
+    const context = {
+      linkedin: linkedinParsed,
+      resume: resumeParsed
+    };
     
-    // Script link
-    if (res.scriptUrl) {
-      document.getElementById('scriptLink').href = res.scriptUrl;
-    }
+    const consent = {
+      digest: document.getElementById('consentDigest').checked,
+      autoSync: document.getElementById('consentSync').checked
+    };
     
-    // Handle empty state
-    if (res.empty) {
-      document.getElementById('emptyState').classList.remove('hidden');
-      document.getElementById('topPlaysSection').classList.add('hidden');
-    } else {
-      // Render top plays
-      const playsHtml = (res.topPlays || []).map(p => `
-        <div class="play-item">
-          <span class="play-status ${p.status === 'Reply Needed' ? 'reply' : 'follow'}">
-            ${p.status === 'Reply Needed' ? 'Reply' : 'Follow'}
-          </span>
-          <span class="play-contact">${p.contact}</span>
-          <span class="play-company">${p.company}</span>
-        </div>
-      `).join('');
+    showView('viewProgress');
+    setStepState('step1', 'running');
+    
+    google.script.run
+      .withSuccessHandler(onSuccess)
+      .withFailureHandler(onError)
+      .saveAndInit(keys, context, consent);
+  }
+  
+  function onSuccess(res) {
+    clearInterval(progressInterval);
+    ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'].forEach(s => setStepState(s, 'done'));
+    
+    setTimeout(() => {
+      showView('viewSuccess');
       
-      document.getElementById('topPlaysSection').innerHTML = playsHtml || '<p style="color: var(--mute); font-size: 12px;">All caught up!</p>';
-    }
+      document.getElementById('sheetLink').href = res.sheetUrl;
+      
+      if (res.scriptUrl) {
+        document.getElementById('scriptLink').href = res.scriptUrl;
+      }
+      
+      if (res.empty) {
+        document.getElementById('emptyState').classList.remove('hidden');
+        document.getElementById('topPlaysSection').classList.add('hidden');
+      } else {
+        const playsHtml = (res.topPlays || []).map(p => `
+          <div class="play-item">
+            <span class="play-status ${p.status === 'Reply Needed' ? 'reply' : 'follow'}">
+              ${p.status === 'Reply Needed' ? 'Reply' : 'Follow'}
+            </span>
+            <span class="play-contact">${p.contact}</span>
+            <span class="play-company">${p.company}</span>
+          </div>
+        `).join('');
+        
+        document.getElementById('topPlaysSection').innerHTML = playsHtml || '<p style="color: var(--mute); font-size: 13px;">All caught up!</p>';
+      }
+      
+      const warningsSection = document.getElementById('warningsSection');
+      let statusHtml = '';
+      
+      if (res.welcomeSent || res.digestSent) {
+        statusHtml += '<p style="color: var(--success);">Check your inbox:</p>';
+        if (res.welcomeSent) statusHtml += '<p style="color: var(--success);">✓ Welcome email sent</p>';
+        if (res.digestSent) statusHtml += '<p style="color: var(--success);">✓ First digest sent</p>';
+      }
+      
+      if (res.warnings && res.warnings.length > 0) {
+        statusHtml += res.warnings.map(w => `<p>⚠️ ${w}</p>`).join('');
+      }
+      
+      if (statusHtml) {
+        warningsSection.innerHTML = statusHtml;
+        warningsSection.classList.remove('hidden');
+      }
+      
+    }, 400);
+  }
+
+  function onError(e) {
+    document.getElementById('step6Subtitle').classList.add('hidden');
+    document.querySelectorAll('.step-icon.running').forEach(icon => {
+      icon.classList.remove('running');
+      icon.classList.add('error');
+      icon.innerHTML = '✕';
+    });
     
-    // Build status messages
-    const warningsSection = document.getElementById('warningsSection');
-    let statusHtml = '';
-    
-    // Email status (success)
-    if (res.welcomeSent || res.digestSent) {
-      statusHtml += '<p style="color: var(--success);">📬 Check your inbox:</p>';
-      if (res.welcomeSent) statusHtml += '<p style="color: var(--success);">✓ Welcome email sent</p>';
-      if (res.digestSent) statusHtml += '<p style="color: var(--success);">✓ First digest sent</p>';
-    }
-    
-    // Warnings (failures)
-    if (res.warnings && res.warnings.length > 0) {
-      statusHtml += res.warnings.map(w => `<p>⚠️ ${w}</p>`).join('');
-    }
-    
-    // Show section if there's anything to display
-    if (statusHtml) {
-      warningsSection.innerHTML = statusHtml;
-      warningsSection.classList.remove('hidden');
-    }
-    
-  }, 400);
-}
-function onError(e) {
-  // Hide subtitle and mark current running step as error
-  document.getElementById('step6Subtitle').classList.add('hidden');
-  document.querySelectorAll('.step-icon.running').forEach(icon => {
-    icon.classList.remove('running');
-    icon.classList.add('error');
-  });
     setTimeout(() => {
       showView('viewError');
-      document.getElementById('errorMessage').textContent = e.message || 'Unknown error occurred.';
+      document.getElementById('errorMessage').textContent = e.message || 'Something went wrong.';
     }, 300);
   }
   
-  // Animate progress while waiting
   let progressInterval;
   function startProgressAnimation() {
-  const steps = ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'];
-  let current = 0;
-  
-  progressInterval = setInterval(() => {
-    if (current > 0 && current < steps.length) {
-      setStepState(steps[current - 1], 'done');
-    }
-    if (current < steps.length) {
-      setStepState(steps[current], 'running');
-      current++;
-      
-      // Show subtitle on last step
-      if (current === steps.length) {
-        document.getElementById('step6Subtitle').classList.remove('hidden');
+    const steps = ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'];
+    let current = 0;
+    
+    progressInterval = setInterval(() => {
+      if (current > 0 && current < steps.length) {
+        setStepState(steps[current - 1], 'done');
       }
-    } else {
-      clearInterval(progressInterval);
-    }
-  }, 1500);
-}
+      if (current < steps.length) {
+        setStepState(steps[current], 'running');
+        current++;
+        
+        if (current === steps.length) {
+          document.getElementById('step6Subtitle').classList.remove('hidden');
+        }
+      } else {
+        clearInterval(progressInterval);
+      }
+    }, 1500);
+  }
   
-  // Start animation when progress view is shown
   const observer = new MutationObserver(() => {
     if (document.getElementById('viewProgress').classList.contains('active')) {
       startProgressAnimation();
@@ -982,4 +1017,4 @@ function onError(e) {
 </script>
 
 </body>
-</html><!-- v1.2.0 -->
+</html>

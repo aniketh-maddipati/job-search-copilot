@@ -1,86 +1,131 @@
-# Job Search Co-Pilot
+# Job Co-Pilot
 
-**AI-powered job triage in Google Sheets.** Inbox chaos → one sheet, clear next actions.
+An AI-powered job search tracker that lives in Google Sheets.
 
-## Local Development
-
-## Why
-
-### Architecture
-
-## How it works
-
-1. **Gmail** — Scans your inbox for job/recruiter/application threads.
-2. **AI** — Groq-powered triage: category (job vs networking), suggested next play, reply drafts.
-3. **Sheet** — One dashboard: threads, status, actions. You run the play; the tool doesn’t send mail.
-
-Your data stays in your Google account and in the Sheet. No third-party CRM, no lock-in.
-
-## Why trust it
-
-- **Open source** — Full code in this repo. Inspect, fork, change.
-- **Runs where you already work** — Google Sheets + Gmail. No new platform.
-- **You stay in control** — AI suggests; you decide what to send. No auto-sending.
-- **Local dev & tests** — Same logic runs in Node with mocks; test without hitting Gmail or APIs.
+Scans your sent emails. Finds job threads. Tells you who to reply to.
 
 ---
 
-## Setup (5 steps)
+## What You'll See
 
-1. **Prereqs** — Node 18+, a Google account, [clasp](https://github.com/google/clasp) (`npm i -g clasp`).
+![Dashboard](screenshots/dashboard.png)
+*Your job threads, sorted by who needs attention*
 
-2. **Clone & install**
-   ```bash
-   git clone <this-repo-url> && cd job-search-copilot
-   npm install
-   ```
-
-3. **Connect Apps Script**
-   ```bash
-   clasp login
-   clasp create --type sheets --title "Job Search Co-Pilot"   # or clasp clone <existing-id>
-   ```
-
-4. **Configure** — Deploy once, open the Sheet, run the Co-Pilot setup from the menu. Add your Groq API key in Script Properties when prompted.
-
-5. **Deploy**
-   ```bash
-   npm run deploy
-   ```
-   Then open the Sheet from the Apps Script project and use the add-on menu.
+![Digest Email](screenshots/digest.png)
+*Daily email at 7am with your top plays*
 
 ---
 
-## Local development
+## The Problem
 
-Same `Code.js` runs in Apps Script (production) and in Node (local) via mocks. No Gmail/API calls needed to iterate.
+You're job searching. You have 40+ email threads open. Some recruiters replied and you forgot. Some you followed up on twice. Some are dead but you keep checking.
 
-```bash
-npm run dev    # UI + mock backend at http://localhost:3000
-npm test       # Unit tests
+Spreadsheet trackers require manual entry. You stop updating them after 3 days.
+
+## What This Does
+
+- **Syncs automatically** — Pulls your last 50 sent emails daily at 6am
+- **AI classification** — Figures out which are job-related
+- **Shows what matters** — Who needs a reply, who to follow up with, who to let go
+- **Daily digest** — 7am email with your top plays
+
+---
+
+## Get Started (5 minutes)
+
+### 1. Copy the template
+[**→ Copy Template**](https://docs.google.com/spreadsheets/d/YOUR_TEMPLATE_ID/copy)
+
+### 2. Get a free API key
+- [Groq](https://console.groq.com/keys) (recommended) — 14,400 free requests/day
+- [Gemini](https://aistudio.google.com/app/apikey) (backup) — 1,500 free requests/day
+
+### 3. Run setup
+Open the sheet → **📧 Job Co-Pilot → Setup** → Paste API key → Initialize
+
+---
+
+## Status Guide
+
+| Status | Meaning |
+|--------|---------|
+| 🔴 Reply Needed | They replied. Your turn. |
+| 🟠 Follow Up | You sent last. 5+ days. Nudge them. |
+| 🔵 Waiting | You sent recently. Give it time. |
+
+---
+
+## Privacy
+
+Your data stays yours.
+
+- Runs entirely in your Google account
+- AI only sees thread metadata (subject, contact, days)
+- No external servers, no data collection
+- Open source — read every line
+
+---
+
+## Known Limitations
+
+- **Thread links in digest don't work** — Gmail uses a different ID format. Use "Open Dashboard" instead.
+- **Emails show as "from me"** — Apps Script sends from your account. Create a Gmail filter for "Job Co-Pilot."
+- **AI isn't perfect** — Some threads get miscategorized. Use "Sync (Fresh)" to re-classify.
+
+---
+
+## Architecture
+
+```
+User's Google Account
+├── Gmail (sent folder)
+│   └── Apps Script reads last 50 threads
+├── Google Sheet (dashboard)
+│   └── Stores classified threads + plays
+└── Apps Script (runtime)
+    ├── Daily sync trigger (6am)
+    ├── Digest email trigger (7am)
+    └── LLM calls (Groq → Gemini failover)
 ```
 
-**Layout:** `Code.js` = core logic. `local/server.js` = local dev server; `local/mocks.js` = Gmail/Sheets/UrlFetch mocks; `local/data/*.json` = mock threads and AI responses. See [`local/`](local/) for details.
+**Key decisions:**
+
+1. **Two-phase filtering** — Rules catch 80% of emails (free, instant). LLM only for ambiguous ones.
+2. **Cache by message count** — Skip re-classification if thread hasn't changed.
+3. **Provider failover** — Groq rate-limited? Auto-switch to Gemini.
+
+See [Architecture Deep Dive](LINK_TO_MEDIUM) for full details.
 
 ---
 
-## Project layout
+## For Developers
 
-| Path | Role |
-|------|------|
-| `Code.js` | Main Apps Script + triage logic |
-| `Setup.html` | Web UI for setup |
-| `local/server.js` | Local dev server |
-| `local/mocks.js` | Mock Gmail, Sheets, etc. |
-| `appsscript.json` | Apps Script manifest |
-| `sync.sh` / `npm run deploy` | Deploy to Apps Script |
+```bash
+git clone https://github.com/aniketh-maddipati/job-search-copilot.git
+cd job-search-copilot
+npm install
+npm test
+./deploy.sh -m "my changes"
+```
+
+PRs welcome.
 
 ---
 
-## Community
+## Why I Built This
 
-- **Use it** — Star the repo if it helps you.
-- **Improve it** — Open issues for bugs/ideas; PRs welcome.
-- **Share it** — Built something on top? Link back so others can find it.
+I was mass cold emailing during my job search and losing track of who replied, who ghosted, and who I forgot to follow up with.
 
-**License:** MIT.
+Built this for myself. Figured others might find it useful.
+
+---
+
+## Author
+
+**Aniketh Maddipati** — Builder, NYC
+
+[LinkedIn](https://linkedin.com/in/anikethmaddipati) · [GitHub](https://github.com/aniketh-maddipati)
+
+---
+
+MIT License
