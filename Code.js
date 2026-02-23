@@ -865,12 +865,18 @@ function sendDailyDigest() {
     template.moreCount = Math.max(0, followUp.length - 3);
     template.activeCount = jobRows.length;
 
+    console.log('Reply rows:', JSON.stringify(replyRows));
+    console.log('Follow rows:', JSON.stringify(followRows));
+
+
     const html = template.evaluate().getContent();
-    const subject = `${replyNeeded.length} replies, ${followUp.length} follow-ups`;
+    const subject = `📧 Job Co-Pilot: ${replyNeeded.length} replies, ${followUp.length} follow-ups`;
     const plainText = `${dateStr}\n\n${replyNeeded.length} need replies, ${followUp.length} need follow-up\n\nOpen Dashboard: ${sheetUrl}`;
 
     GmailApp.sendEmail(myEmail, subject, plainText, { htmlBody: html });
     LOG.info('digest', `Sent: ${replyNeeded.length} reply, ${followUp.length} follow up`);
+
+    
 
   } catch (e) {
     LOG.error('digest', e.message);
