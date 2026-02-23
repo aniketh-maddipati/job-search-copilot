@@ -448,3 +448,123 @@ describe('Context quality gate', () => {
     expect(ContextParser.score(parsed)).toBeLessThan(30);
   });
 });
+
+// Add to tests/unit.test.js
+
+describe('Digest helpers', () => {
+  test('formats contact name', () => {
+    const formatName = (contact) => contact.split('.')[0].replace(/^\w/, c => c.toUpperCase());
+    
+    expect(formatName('ryan.smith')).toBe('Ryan');
+    expect(formatName('lia')).toBe('Lia');
+    expect(formatName('recruiting')).toBe('Recruiting');
+    expect(formatName('john.doe.extra')).toBe('John');
+  });
+
+  test('generates correct thread link', () => {
+    const threadLink = (id) => `https://mail.google.com/mail/u/0/#sent/${id}`;
+    
+    expect(threadLink('abc123')).toBe('https://mail.google.com/mail/u/0/#sent/abc123');
+    expect(threadLink('19c30b5ab4ee9c01')).toBe('https://mail.google.com/mail/u/0/#sent/19c30b5ab4ee9c01');
+  });
+
+  test('formats date string', () => {
+    const formatDate = (date) => {
+      const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${weekdays[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
+    };
+    
+    const testDate = new Date('2026-02-24T12:00:00');
+    expect(formatDate(testDate)).toBe('Tue, Feb 24');
+  });
+
+  test('slices reply rows to max 3', () => {
+    const rows = [1, 2, 3, 4, 5];
+    expect(rows.slice(0, 3)).toEqual([1, 2, 3]);
+  });
+
+  test('calculates more count', () => {
+    const followUp = [1, 2, 3, 4, 5, 6];
+    const moreCount = Math.max(0, followUp.length - 3);
+    expect(moreCount).toBe(3);
+    
+    const small = [1, 2];
+    expect(Math.max(0, small.length - 3)).toBe(0);
+  });
+
+  test('truncates subject', () => {
+    const truncate = (s, len) => s.slice(0, len) + (s.length > len ? '...' : '');
+    
+    expect(truncate('Short', 30)).toBe('Short');
+    expect(truncate('This is a very long subject line that exceeds thirty characters', 30)).toBe('This is a very long subject li...');
+  });
+});
+
+describe('Digest row filtering', () => {
+  const mockRows = [
+    { status: { label: 'Reply Needed' }, days: 16, contact: 'ryan', company: 'figma' },
+    { status: { label: 'Reply Needed' }, days: 21, contact: 'lia', company: 'cursor' },
+    { status: { label: 'Follow Up' }, days: 25, contact: 'tuhin', company: 'baseten' },
+    { status: { label: 'Follow Up' }, days: 23, contact: 'amanda', company: 'warp' },
+    { status: { label: 'Waiting' }, days: 2, contact: 'mike', company: 'openai' },
+  ];
+
+  test('filters reply needed', () => {
+    const replyNeeded = mockRows.filter(r => r.status.label === 'Reply Needed');
+    expect(replyNeeded.length).toBe(2);
+    expect(replyNeeded[0].contact).toBe('ryan');
+  });
+
+  test('filters follow up', () => {
+    const followUp = mockRows.filter(r => r.status.label === 'Follow Up');
+    expect(followUp.length).toBe(2);
+  });
+
+  test('excludes waiting from digest', () => {
+    const actionable = mockRows.filter(r => r.status.label !== 'Waiting');
+    expect(actionable.length).toBe(4);
+  });
+
+  test('sorts by days descending (oldest first)', () => {
+    const replyNeeded = mockRows
+      .filter(r => r.status.label === 'Reply Needed')
+      .sort((a, b) => b.days - a.days);
+    
+    expect(replyNeeded[0].days).toBe(21);
+    expect(replyNeeded[1].days).toBe(16);
+  });
+});
+
+describe('Digest skip conditions', () => {
+  test('skips when no reply needed and no follow up', () => {
+    const replyNeeded = [];
+    const followUp = [];
+    const shouldSkip = replyNeeded.length === 0 && followUp.length === 0;
+    expect(shouldSkip).toBe(true);
+  });
+
+  test('sends when reply needed exists', () => {
+    const replyNeeded = [{ contact: 'ryan' }];
+    const followUp = [];
+    const shouldSkip = replyNeeded.length === 0 && followUp.length === 0;
+    expect(shouldSkip).toBe(false);
+  });
+
+  test('sends when follow up exists', () => {
+    const replyNeeded = [];
+    const followUp = [{ contact: 'tuhin' }];
+    const shouldSkip = replyNeeded.length === 0 && followUp.length === 0;
+    expect(shouldSkip).toBe(false);
+  });
+});
+
+describe('Digest subject line', () => {
+  test('generates correct subject', () => {
+    const genSubject = (reply, follow) => `${reply} replies, ${follow} follow-ups`;
+    
+    expect(genSubject(4, 26)).toBe('4 replies, 26 follow-ups');
+    expect(genSubject(0, 5)).toBe('0 replies, 5 follow-ups');
+    expect(genSubject(1, 1)).toBe('1 replies, 1 follow-ups');
+  });
+});

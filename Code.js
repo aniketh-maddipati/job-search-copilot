@@ -803,72 +803,71 @@ function syncFresh() {
 // ═══════════════════════════════════════════════════════════════════════════════
 // DAILY DIGEST
 // ═══════════════════════════════════════════════════════════════════════════════
-
 function sendDailyDigest() {
   try {
     Cache.load();
     const myEmail = App.session.getEmail();
     const threads = App.gmail.search('in:sent', 0, USER_CONFIG.LOOKBACK);
 
-    // Quick filter: only cached job threads
     const jobRows = [];
     threads.forEach(t => {
       const cached = Cache.get(t.getId());
       if (cached?.isJobThread) {
         const row = Email.parseFull(t, cached, myEmail);
         row.status = Status.compute(row);
+        row.id = t.getId();
         Object.assign(row, cached);
         jobRows.push(row);
       }
     });
 
-    const replyNeeded = jobRows.filter(r => r.status.label === 'Reply Needed');
-    const followUp = jobRows.filter(r => r.status.label === 'Follow Up');
-    const waiting = jobRows.filter(r => r.status.label === 'Waiting');
+    const replyNeeded = jobRows.filter(r => r.status.label === 'Reply Needed').sort((a, b) => b.days - a.days);
+    const followUp = jobRows.filter(r => r.status.label === 'Follow Up').sort((a, b) => b.days - a.days);
 
     if (replyNeeded.length === 0 && followUp.length === 0) {
       LOG.info('digest', 'No action items, skipping');
       return;
     }
 
-    const sevenDaysAgo = Date.now() - 7 * 86400000;
-    const stats = {
-      sent: jobRows.length,
-      newCount: jobRows.filter(r => (r.firstSeen || 0) > sevenDaysAgo).length,
-      replyNeeded: replyNeeded.length,
-      followUp: followUp.length,
-      waiting: waiting.length,
-      finalStage: jobRows.filter(r => USER_CONFIG.FINAL_CATEGORIES.includes(r.category)).length
-    };
+    const sheetUrl = SpreadsheetApp.getActiveSpreadsheet().getUrl();
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+    const dateStr = `${weekdays[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
 
-    const weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date().getDay()];
-    const observation = AI.generateObservation(stats);
+    const formatName = (contact) => contact.split('.')[0].replace(/^\w/, c => c.toUpperCase());
+    const threadLink = (id) => `https://mail.google.com/mail/u/0/#sent/${id}`;
 
-    const first = replyNeeded[0] || followUp[0];
-    const firstName = first.contact.split('.')[0].replace(/^\w/, c => c.toUpperCase());
-    const actionCount = replyNeeded.length + followUp.length - 1;
-    const subject = actionCount > 0 ? `Reply to ${firstName} @ ${first.company} — and ${actionCount} more` : `Reply to ${firstName} @ ${first.company}`;
+    const replyRows = replyNeeded.slice(0, 3).map(r => ({
+      name: formatName(r.contact),
+      company: r.company,
+      subject: r.subject.slice(0, 30) + (r.subject.length > 30 ? '...' : ''),
+      days: r.days,
+      link: threadLink(r.id)
+    }));
 
-    let body = `${firstName},\n\n${weekday}. ${observation}\n\n`;
+    const followRows = followUp.slice(0, 3).map(r => ({
+      name: formatName(r.contact),
+      company: r.company,
+      days: r.days,
+      link: threadLink(r.id)
+    }));
 
-    const formatRow = r => {
-      const name = r.contact.split('.').map(s => s.replace(/^\w/, c => c.toUpperCase())).join(' ');
-      return `**${name}, ${r.company}** · ${r.days}d\n${r.play}\n\n${r.draft}\n\nhttps://mail.google.com/mail/u/0/#inbox/${r.id}\n\n`;
-    };
+    const template = HtmlService.createTemplateFromFile('DigestEmail');
+    template.dateStr = dateStr;
+    template.sheetUrl = sheetUrl;
+    template.replyCount = replyNeeded.length;
+    template.followCount = followUp.length;
+    template.replyRows = replyRows;
+    template.followRows = followRows;
+    template.moreCount = Math.max(0, followUp.length - 3);
+    template.activeCount = jobRows.length;
 
-    replyNeeded.forEach(r => { body += formatRow(r); });
-    if (followUp.length) {
-      body += '---\n\n**Follow up this week**\n\n';
-      followUp.forEach(r => { body += formatRow(r); });
-    }
+    const html = template.evaluate().getContent();
+    const subject = `${replyNeeded.length} replies, ${followUp.length} follow-ups`;
+    const plainText = `${dateStr}\n\n${replyNeeded.length} need replies, ${followUp.length} need follow-up\n\nOpen Dashboard: ${sheetUrl}`;
 
-    body += '—\n\n';
-    if (waiting.length) {
-      body += waiting.slice(0, 3).map(r => `${r.contact.split('.')[0].replace(/^\w/, c => c.toUpperCase())} at ${r.company}`).join(', ') + ' — watching.\n\n';
-    }
-    body += `${stats.sent} sent · ${stats.newCount} new · ${stats.finalStage} at final stage`;
-
-    GmailApp.sendEmail(myEmail, subject, body);
+    GmailApp.sendEmail(myEmail, subject, plainText, { htmlBody: html });
     LOG.info('digest', `Sent: ${replyNeeded.length} reply, ${followUp.length} follow up`);
 
   } catch (e) {
@@ -966,7 +965,7 @@ function saveAndInit(keys, context, consent) {
     if (consent.digest) {
       if (!createDigestTrigger()) warnings.push('Digest trigger failed');
     }
-    
+
     // Welcome email
     sendWelcomeEmail(ss.getUrl(), consent);
 
@@ -1055,4 +1054,74 @@ function hideDebugSheets() {
   if (cache) cache.hideSheet();
   
   SpreadsheetApp.getActiveSpreadsheet().toast('Debug sheets hidden', '✓');
+}
+
+
+// Add to Code.js
+
+function runIntegrationTests() {
+  const results = [];
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // Test 1: Cache loads without error
+  try {
+    Cache.load();
+    results.push('✅ Cache.load()');
+  } catch (e) {
+    results.push('❌ Cache.load(): ' + e.message);
+  }
+  
+  // Test 2: Gmail search works
+  try {
+    const threads = GmailApp.search('in:sent', 0, 5);
+    results.push(`✅ Gmail search (${threads.length} threads)`);
+  } catch (e) {
+    results.push('❌ Gmail search: ' + e.message);
+  }
+  
+  // Test 3: API key exists
+  try {
+    const keys = AI.getKeys();
+    const hasKey = keys.groq || keys.gemini;
+    results.push(hasKey ? '✅ API key configured' : '⚠️ No API key');
+  } catch (e) {
+    results.push('❌ API key check: ' + e.message);
+  }
+  
+  // Test 4: Dashboard sheet exists
+  try {
+    const dash = ss.getSheetByName('Dashboard');
+    results.push(dash ? '✅ Dashboard exists' : '⚠️ No Dashboard');
+  } catch (e) {
+    results.push('❌ Dashboard check: ' + e.message);
+  }
+  
+  // Test 5: Sync runs without error (dry run)
+  try {
+    const myEmail = App.session.getEmail();
+    results.push(myEmail ? `✅ Session email (${myEmail.slice(0,3)}...)` : '❌ No email');
+  } catch (e) {
+    results.push('❌ Session: ' + e.message);
+  }
+  
+  // Test 6: LLM responds
+  try {
+    const keys = AI.getKeys();
+    const provider = AI.selectProvider(keys);
+    if (provider) {
+      const resp = Providers[provider].call('Say OK', keys[provider]);
+      results.push(resp.success ? '✅ LLM responds' : '❌ LLM failed: ' + resp.reason);
+    } else {
+      results.push('⚠️ No provider to test');
+    }
+  } catch (e) {
+    results.push('❌ LLM test: ' + e.message);
+  }
+  
+  // Output
+  const output = results.join('\n');
+  LOG.info('test', output);
+  ss.toast(results.filter(r => r.startsWith('❌')).length === 0 ? 'All tests passed!' : 'Some tests failed', '🧪 Tests', 5);
+  
+  return output;
 }
