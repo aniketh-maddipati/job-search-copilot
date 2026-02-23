@@ -994,3 +994,8 @@ function showSetup() {
 function getDebugInfo() {
   return { scriptId: ScriptApp.getScriptId(), scriptUrl: `https://script.google.com/d/${ScriptApp.getScriptId()}/edit`, version: CORE.VERSION };
 }
+
+function clearAllProperties() {
+  PropertiesService.getScriptProperties().deleteAllProperties();
+  SpreadsheetApp.getActiveSpreadsheet().toast('Properties cleared');
+}
