@@ -875,32 +875,35 @@ function sendDailyDigest() {
   }
 }
 
-function sendWelcomeEmail(sheetUrl, consent) {
+function sendWelcomeEmail(sheetUrl, consent, stats) {
   try {
     const email = Session.getActiveUser().getEmail();
     
-    const subject = 'Job Co-Pilot is set up';
+    const subject = `You're set up — here's your first snapshot`;
     
     const body = `Hey,
 
-Your job search dashboard is ready.
-
-What happens now:
-${consent.autoSync ? '• 6am — syncs your sent emails, filters job threads' : '• Manual sync only (auto-sync disabled)'}
-${consent.digest ? '• 7am — digest email with your top plays' : '• No digest emails (disabled)'}
-
-Quick links:
-- Dashboard: ${sheetUrl}
-- Docs: https://github.com/aniketh-maddipati/job-search-copilot
-
-Privacy: Your emails stay in your Google account. The AI only sees thread metadata and generates plays locally. Nothing stored externally except anonymous usage stats.
-
-Questions? Reply here or find me on LinkedIn:
-https://linkedin.com/in/anikethmaddipati
-
-Good luck out there.
-
-— Aniketh`;
+    Thanks for trying Job Co-Pilot.
+    
+    Your dashboard is ready with ${stats.jobThreads} job threads:
+    - ${stats.replyNeeded} need your reply
+    - ${stats.followUp} ready for follow-up
+    - ${stats.waiting} waiting on them
+    
+    → Open Dashboard: ${sheetUrl}
+    
+    What happens next:
+    ${consent.autoSync ? '• 6am daily — syncs new sent emails' : '• Manual sync only'}
+    ${consent.digest ? '• 7am daily — digest email with your top plays' : '• No daily digest'}
+    
+    Quick tip: Mark threads "Done" to hide stale conversations.
+    
+    Privacy: Your emails never leave your Google account. The AI only sees thread metadata.
+    
+    Built this while job searching myself. Hope it helps you too.
+    
+    — Aniketh
+    https://linkedin.com/in/anikethmaddipati`;
 
     GmailApp.sendEmail(email, subject, body);
     LOG.info('welcome', 'Sent welcome email');
@@ -908,7 +911,6 @@ Good luck out there.
     LOG.warn('welcome', `Failed: ${e.message}`);
   }
 }
-
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // BOOTSTRAP
@@ -966,11 +968,24 @@ function saveAndInit(keys, context, consent) {
       if (!createDigestTrigger()) warnings.push('Digest trigger failed');
     }
 
-    // Welcome email
-    sendWelcomeEmail(ss.getUrl(), consent);
-
     // Initial sync
     const { stats, rows } = sync();
+
+    // Calculate stats for welcome email
+    const emailStats = {
+      jobThreads: rows.length,
+      replyNeeded: rows.filter(r => r.status.label === 'Reply Needed').length,
+      followUp: rows.filter(r => r.status.label === 'Follow Up').length,
+      waiting: rows.filter(r => r.status.label === 'Waiting').length
+    };
+
+    // Welcome email (after sync so we have stats)
+    sendWelcomeEmail(ss.getUrl(), consent, emailStats);
+
+    // Send first digest immediately if opted in
+    if (consent.digest && rows.length > 0) {
+      sendDailyDigest();
+    }
 
     if (stats.total === 0) {
       return { success: true, empty: true, message: 'No sent emails found', sheetUrl: ss.getUrl() };

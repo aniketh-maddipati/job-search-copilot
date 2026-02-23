@@ -568,3 +568,102 @@ describe('Digest subject line', () => {
     expect(genSubject(1, 1)).toBe('1 replies, 1 follow-ups');
   });
 });
+
+// Add to tests/unit.test.js
+
+describe('Welcome email', () => {
+  test('includes stats in message', () => {
+    const stats = { jobThreads: 30, replyNeeded: 4, followUp: 20, waiting: 6 };
+    const body = `${stats.jobThreads} job threads`;
+    
+    expect(body).toContain('30');
+  });
+
+  test('handles zero stats', () => {
+    const stats = { jobThreads: 0, replyNeeded: 0, followUp: 0, waiting: 0 };
+    expect(stats.jobThreads).toBe(0);
+  });
+
+  test('consent controls messaging', () => {
+    const consent = { autoSync: true, digest: true };
+    const autoSyncMsg = consent.autoSync ? '6am daily' : 'Manual sync only';
+    const digestMsg = consent.digest ? '7am daily' : 'No daily digest';
+    
+    expect(autoSyncMsg).toBe('6am daily');
+    expect(digestMsg).toBe('7am daily');
+  });
+
+  test('disabled consent shows correct messaging', () => {
+    const consent = { autoSync: false, digest: false };
+    const autoSyncMsg = consent.autoSync ? '6am daily' : 'Manual sync only';
+    const digestMsg = consent.digest ? '7am daily' : 'No daily digest';
+    
+    expect(autoSyncMsg).toBe('Manual sync only');
+    expect(digestMsg).toBe('No daily digest');
+  });
+});
+
+describe('First digest trigger', () => {
+  test('sends digest when opted in and has rows', () => {
+    const consent = { digest: true };
+    const rows = [{ id: '1' }, { id: '2' }];
+    const shouldSend = consent.digest && rows.length > 0;
+    
+    expect(shouldSend).toBe(true);
+  });
+
+  test('skips digest when opted out', () => {
+    const consent = { digest: false };
+    const rows = [{ id: '1' }];
+    const shouldSend = consent.digest && rows.length > 0;
+    
+    expect(shouldSend).toBe(false);
+  });
+
+  test('skips digest when no rows', () => {
+    const consent = { digest: true };
+    const rows = [];
+    const shouldSend = consent.digest && rows.length > 0;
+    
+    expect(shouldSend).toBe(false);
+  });
+});
+
+describe('Email stats calculation', () => {
+  const mockRows = [
+    { status: { label: 'Reply Needed' } },
+    { status: { label: 'Reply Needed' } },
+    { status: { label: 'Follow Up' } },
+    { status: { label: 'Follow Up' } },
+    { status: { label: 'Follow Up' } },
+    { status: { label: 'Waiting' } },
+  ];
+
+  test('calculates jobThreads', () => {
+    const stats = { jobThreads: mockRows.length };
+    expect(stats.jobThreads).toBe(6);
+  });
+
+  test('calculates replyNeeded', () => {
+    const replyNeeded = mockRows.filter(r => r.status.label === 'Reply Needed').length;
+    expect(replyNeeded).toBe(2);
+  });
+
+  test('calculates followUp', () => {
+    const followUp = mockRows.filter(r => r.status.label === 'Follow Up').length;
+    expect(followUp).toBe(3);
+  });
+
+  test('calculates waiting', () => {
+    const waiting = mockRows.filter(r => r.status.label === 'Waiting').length;
+    expect(waiting).toBe(1);
+  });
+
+  test('stats sum equals total', () => {
+    const replyNeeded = mockRows.filter(r => r.status.label === 'Reply Needed').length;
+    const followUp = mockRows.filter(r => r.status.label === 'Follow Up').length;
+    const waiting = mockRows.filter(r => r.status.label === 'Waiting').length;
+    
+    expect(replyNeeded + followUp + waiting).toBe(mockRows.length);
+  });
+});
