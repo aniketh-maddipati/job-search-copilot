@@ -448,33 +448,30 @@
     
     <!-- API Key Section -->
     <div class="section-label">Connect AI</div>
-    
-    <div id="groqSection">
-      <input 
-        type="password" 
-        id="groqKey" 
-        placeholder="gsk_..." 
-        oninput="validateInputs()"
-        autocomplete="off"
-      >
-      <div class="input-hint">
-        <a href="https://console.groq.com/keys" target="_blank">Get Groq key →</a>
-        <span class="toggle-link" onclick="toggleGemini()">or use Gemini</span>
-      </div>
+
+    <input 
+      type="password" 
+      id="groqKey" 
+      placeholder="gsk_... (Groq - recommended)"
+      oninput="validateInputs()"
+      autocomplete="off"
+    >
+    <div class="input-hint">
+      <a href="https://console.groq.com/keys" target="_blank">Get Groq key →</a>
+      <span style="color: var(--mute);">Fast & free</span>
     </div>
-    
-    <div id="geminiSection" class="hidden">
-      <input 
-        type="password" 
-        id="geminiKey" 
-        placeholder="AIza..." 
-        oninput="validateInputs()"
-        autocomplete="off"
-      >
-      <div class="input-hint">
-        <a href="https://aistudio.google.com/app/apikey" target="_blank">Get Gemini key →</a>
-        <span class="toggle-link" onclick="toggleGemini()">use Groq instead</span>
-      </div>
+
+    <input 
+      type="password" 
+      id="geminiKey" 
+      placeholder="AIza... (Gemini - backup)" 
+      oninput="validateInputs()"
+      autocomplete="off"
+      style="margin-top: 12px;"
+    >
+    <div class="input-hint">
+      <a href="https://aistudio.google.com/app/apikey" target="_blank">Get Gemini key →</a>
+      <span style="color: var(--mute);">Optional fallback</span>
     </div>
     
     <!-- Context Section -->
