@@ -9,4 +9,3 @@ eslint.config.js
 deploy.sh
 README.md
 .claspignore
-*.md
