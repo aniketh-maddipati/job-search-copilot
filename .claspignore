@@ -1,25 +1,11 @@
-# Local development files
-local/**
 node_modules/**
-package.json
-package-lock.json
-jsconfig.json
-README.md
-sync.sh
-.git/**
-.gitignore
-
-# Test files (run locally, not in Apps Script)
-*.test.js
-__tests__/**
-
 tests/**
-node_modules/**
-package.json
-package-lock.json
-jest.config.js
-deploy.sh
-README.md
+.eslintrc.mjs
+eslint.config.mjs
+eslint.config.js
+*.md
 .git/**
 .gitignore
-.claspignoreeslint.config.js
+package.json
+package-lock.json
+deploy.sh
