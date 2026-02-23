@@ -1,55 +1,10 @@
-# Job Co-Pilot
+# Architecture
 
-An AI-powered job search tracker that lives in Google Sheets.
-
-Scans your sent emails. Finds job threads. Tells you who to reply to.
-
-![Daily digest email](screenshots/desktop_digest.png)
+Technical overview. For the full story, see [I Built This Because Job Searching Broke Me](https://medium.com/@anikethmaddipati/i-built-this-because-job-searching-broke-me-and-maybe-itll-help-you-too-74ca73305da8).
 
 ---
 
-## The Problem
-
-You're job searching. 40+ email threads. Some recruiters replied and you forgot. Some you followed up on twice. Some are dead but you keep checking.
-
-Spreadsheet trackers require manual entry. You stop updating them after 3 days.
-
-## What This Does
-
-- **Syncs automatically** — Pulls your last 50 sent emails daily at 6am
-- **AI classification** — Figures out which are job-related
-- **Shows what matters** — Who needs a reply, who to follow up with
-- **Daily digest** — 7am email with your top plays
-
----
-
-## Get Started (5 minutes)
-
-1. [**Copy the template**](https://docs.google.com/spreadsheets/d/YOUR_TEMPLATE_ID/copy)
-2. Get a free API key from [Groq](https://console.groq.com/keys) or [Gemini](https://aistudio.google.com/app/apikey)
-3. Open the sheet → **📧 Job Co-Pilot → Setup** → Paste key → Initialize
-
----
-
-## Privacy
-
-Your data stays yours.
-
-- Runs entirely in your Google account
-- AI only sees thread metadata (subject, contact, days)
-- No external servers
-- Open source — read every line
-
----
-
-## Limitations
-
-- **Thread links in digest don't work** — Gmail uses a different ID format. Use the dashboard.
-- **AI isn't perfect** — Some threads get miscategorized. Use "Sync (Fresh)" to re-run.
-
----
-
-## Architecture
+## Overview
 
 ```
 User's Google Account
@@ -60,24 +15,68 @@ User's Google Account
                          LLM APIs (Groq → Gemini)
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
+No external servers. No database. User owns their data.
+
+---
+
+## Trust Model
+
+- **Data stays in user's account.** No external storage.
+- **AI sees metadata only.** Subject, recipient, days since last message. Not email bodies.
+- **No send permissions.** Cannot send email on user's behalf.
+- **Open source.** Read every line.
+
+---
+
+## Core Design
+
+### Two-Phase Classification
+
+50 threads × 500ms = too slow.
+
+Rules filter 80%. LLM handles the rest.
+
+```javascript
+if (subject.match(/interview|recruiter|role/i)) return { isJob: true };
+if (domain === 'amazon.com' && subject.match(/order/i)) return { isJob: false };
+return { uncertain: true };  // → LLM
+```
+
+### Caching
+
+Cache by thread ID + message count. Re-classify only on new messages.
+
+### Provider Failover
+
+Groq primary. Gemini backup. Automatic switch on rate limit.
+
+---
+
+## Performance
+
+| Operation | Time |
+|-----------|------|
+| Initial setup | ~30s |
+| Daily sync (cached) | ~3s |
+
+---
+
+## Limitations
+
+- Thread links don't work (Gmail ID mismatch)
+- Apps Script: 6-min limit, slow cold starts
+- Emoji breaks in email subjects
+
+---
+
+## Deep Dive
+
+[The Architecture of a Zero-Infrastructure AI App](https://medium.com/@anikethmaddipati/the-architecture-of-a-zero-infrastructure-ai-app-12e7d5ffab96)
 
 ---
 
 ## Status
 
-Code is available to use, fork, learn from.
+Code is available to use and learn from.
 
-I'm job searching — can't commit to full open source contribution model yet. Feedback welcome, updates when I can.
-
----
-
-## Author
-
-**Aniketh Maddipati** — Engineering leader, NYC
-
-[LinkedIn](https://linkedin.com/in/anikethmaddipati) · [GitHub](https://github.com/aniketh-maddipati)
-
----
-
-MIT License
+I'm job searching — can't commit to a full contribution model right now. Feedback welcome, updates when I can.

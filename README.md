@@ -4,9 +4,10 @@ An AI-powered job search tracker that lives in Google Sheets.
 
 Scans your sent emails. Finds job threads. Tells you who to reply to.
 
-![Daily digest email](screenshots/desktop_digest.png)
+![Daily digest email](/screenshots/desktop_digest.png)
 
 ---
+For the full story, see [I Built This Because Job Searching Broke Me](https://medium.com/@anikethmaddipati/i-built-this-because-job-searching-broke-me-and-maybe-itll-help-you-too-74ca73305da8).
 
 ## The Problem
 
@@ -25,7 +26,7 @@ Spreadsheet trackers require manual entry. You stop updating them after 3 days.
 
 ## Get Started (5 minutes)
 
-1. [**Copy the template**](https://docs.google.com/spreadsheets/d/YOUR_TEMPLATE_ID/copy)
+1. [**Copy the template**](https://docs.google.com/spreadsheets/d/1UmN1oQtpoHZ8s6A9alow-NZN2SZiXmF89LQiHR4MnRE/copy)
 2. Get a free API key from [Groq](https://console.groq.com/keys) or [Gemini](https://aistudio.google.com/app/apikey)
 3. Open the sheet → **📧 Job Co-Pilot → Setup** → Paste key → Initialize
 
