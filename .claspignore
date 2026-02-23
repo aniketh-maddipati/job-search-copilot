@@ -22,4 +22,4 @@ deploy.sh
 README.md
 .git/**
 .gitignore
-.claspignore
+.claspignoreeslint.config.js
