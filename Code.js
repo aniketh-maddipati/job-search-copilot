@@ -71,7 +71,6 @@ const CORE = Object.freeze({
       muted: '#5f6368',
     },
   },
-  RATE_LIMIT_MS: 60000,
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -230,11 +229,6 @@ const App = {
       return this._email || '';
     },
   },
-  fetch: {
-    post: (url, opts) => UrlFetchApp.fetch(url, { 
-      method: 'post', contentType: 'application/json', muteHttpExceptions: true, ...opts 
-    }),
-  }
 };
 
 const Security = {
@@ -243,7 +237,6 @@ const Security = {
     if (typeof s !== 'string' || !s.trim()) return '—';
     return /^[=+\-@]/.test(s.trim()) ? "'" + s : s;
   },
-  validateAI: (arr, len) => Array.isArray(arr) && arr.length === len,
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -742,7 +735,7 @@ function saveAndInit(keys) {
     if (sheet1 && sheet1.getLastRow() === 0) {
       ss.deleteSheet(sheet1);
     }
-    
+    s
     // 3. Formatting (The "App" look)
     dash.clear(); 
     dash.getRange(1, 1, 1, CORE.HEADERS.length)

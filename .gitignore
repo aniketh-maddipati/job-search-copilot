@@ -1,8 +1,4 @@
-node_modules/
-.DS_Store
-*.log
-.env
-
+node_modules/**
 tests/**
 .git/**
 package.json
@@ -13,3 +9,4 @@ eslint.config.js
 deploy.sh
 README.md
 .claspignore
+*.md

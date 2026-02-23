@@ -20,10 +20,10 @@ export default [
         "no-unreachable": "error",
         "no-dupe-keys": "error",
         "no-redeclare": "error",
-"no-unused-vars": ["warn", { 
-  "varsIgnorePattern": "^(onOpen|onEdit|doGet|doPost|sync|syncFresh|showSetup|saveAndInit|clearCache|showDebugSheets|hideDebugSheets|createDailyTrigger|removeTriggers)$",
-  "caughtErrors": "none"
-}]
-      }
+    "no-unused-vars": ["warn", { 
+    "varsIgnorePattern": "^(onOpen|onEdit|doGet|doPost|sync|syncFresh|showSetup|saveAndInit|clearCache|showDebugSheets|hideDebugSheets|createDailyTrigger|removeTriggers)$",
+    "caughtErrors": "none"
+    }]
+        }
     }
   ];
