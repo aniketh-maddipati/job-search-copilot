@@ -1,4 +1,10 @@
-node_modules/
-.DS_Store
-*.log
-.env
+node_modules/**
+tests/**
+.git/**
+package.json
+package-lock.json
+jest.config.cjs
+eslint.config.js
+.gitignore
+deploy.sh
+.claspignore

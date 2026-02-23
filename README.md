@@ -1,86 +1,85 @@
-# Job Search Co-Pilot
+# Job Co-Pilot
 
-**AI-powered job triage in Google Sheets.** Inbox chaos → one sheet, clear next actions.
+An AI-powered job search tracker that lives in Google Sheets.
 
-## Local Development
+Scans your sent emails. Finds job threads. Tells you who to reply to.
 
-## Why
+![Daily digest email](/screenshots/desktop_digest.png)
 
-### Architecture
 
-## How it works
+---
+For the full story, see [I Built This Because Job Searching Broke Me](https://medium.com/@anikethmaddipati/i-built-this-because-job-searching-broke-me-and-maybe-itll-help-you-too-74ca73305da8).
 
-1. **Gmail** — Scans your inbox for job/recruiter/application threads.
-2. **AI** — Groq-powered triage: category (job vs networking), suggested next play, reply drafts.
-3. **Sheet** — One dashboard: threads, status, actions. You run the play; the tool doesn’t send mail.
+## The Problem
 
-Your data stays in your Google account and in the Sheet. No third-party CRM, no lock-in.
+You're job searching. 40+ email threads. Some recruiters replied and you forgot. Some you followed up on twice. Some are dead but you keep checking.
 
-## Why trust it
+Spreadsheet trackers require manual entry. You stop updating them after 3 days.
 
-- **Open source** — Full code in this repo. Inspect, fork, change.
-- **Runs where you already work** — Google Sheets + Gmail. No new platform.
-- **You stay in control** — AI suggests; you decide what to send. No auto-sending.
-- **Local dev & tests** — Same logic runs in Node with mocks; test without hitting Gmail or APIs.
+## What This Does
+
+- **Syncs automatically** — Pulls your last 50 sent emails daily at 6am
+- **AI classification** — Figures out which are job-related
+- **Shows what matters** — Who needs a reply, who to follow up with
+- **Daily digest** — 7am email with your top plays
 
 ---
 
-## Setup (5 steps)
+## Get Started (5 minutes)
 
-1. **Prereqs** — Node 18+, a Google account, [clasp](https://github.com/google/clasp) (`npm i -g clasp`).
-
-2. **Clone & install**
-   ```bash
-   git clone <this-repo-url> && cd job-search-copilot
-   npm install
-   ```
-
-3. **Connect Apps Script**
-   ```bash
-   clasp login
-   clasp create --type sheets --title "Job Search Co-Pilot"   # or clasp clone <existing-id>
-   ```
-
-4. **Configure** — Deploy once, open the Sheet, run the Co-Pilot setup from the menu. Add your Groq API key in Script Properties when prompted.
-
-5. **Deploy**
-   ```bash
-   npm run deploy
-   ```
-   Then open the Sheet from the Apps Script project and use the add-on menu.
+1. [**Copy the template**](https://docs.google.com/spreadsheets/d/1UmN1oQtpoHZ8s6A9alow-NZN2SZiXmF89LQiHR4MnRE/copy)
+2. Get a free API key from [Groq](https://console.groq.com/keys) or [Gemini](https://aistudio.google.com/app/apikey)
+3. Open the sheet → **📧 Job Co-Pilot → Setup** → Paste key → Initialize
 
 ---
 
-## Local development
+## Privacy
 
-Same `Code.js` runs in Apps Script (production) and in Node (local) via mocks. No Gmail/API calls needed to iterate.
+Your data stays yours.
 
-```bash
-npm run dev    # UI + mock backend at http://localhost:3000
-npm test       # Unit tests
+- Runs entirely in your Google account
+- AI only sees thread metadata (subject, contact, days)
+- No external servers
+- Open source — read every line
+
+---
+
+## Limitations
+
+- **Thread links in digest don't work** — Gmail uses a different ID format. Use the dashboard.
+- **AI isn't perfect** — Some threads get miscategorized. Use "Sync (Fresh)" to re-run.
+
+---
+
+## Architecture
+
+```
+User's Google Account
+├── Gmail (sent folder) ──▶ Apps Script ──▶ Google Sheet
+└── Triggers (6am sync, 7am digest)
+                              │
+                              ▼
+                         LLM APIs (Groq → Gemini)
 ```
 
-**Layout:** `Code.js` = core logic. `local/server.js` = local dev server; `local/mocks.js` = Gmail/Sheets/UrlFetch mocks; `local/data/*.json` = mock threads and AI responses. See [`local/`](local/) for details.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for details.
 
 ---
 
-## Project layout
+## Status
 
-| Path | Role |
-|------|------|
-| `Code.js` | Main Apps Script + triage logic |
-| `Setup.html` | Web UI for setup |
-| `local/server.js` | Local dev server |
-| `local/mocks.js` | Mock Gmail, Sheets, etc. |
-| `appsscript.json` | Apps Script manifest |
-| `sync.sh` / `npm run deploy` | Deploy to Apps Script |
+Code is available to use, fork, learn from.
+
+I'm job searching — can't commit to full open source contribution model yet. Feedback welcome, updates when I can.
 
 ---
 
-## Community
+## Author
 
-- **Use it** — Star the repo if it helps you.
-- **Improve it** — Open issues for bugs/ideas; PRs welcome.
-- **Share it** — Built something on top? Link back so others can find it.
+**Aniketh Maddipati** — Engineering leader, NYC
 
-**License:** MIT.
+[LinkedIn](https://linkedin.com/in/anikethmaddipati) · [GitHub](https://github.com/aniketh-maddipati)
+
+---
+
+MIT License

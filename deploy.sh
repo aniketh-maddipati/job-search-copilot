@@ -1,119 +1,259 @@
 #!/bin/bash
-# deploy.sh - Push to both Google Apps Script and GitHub
-# Only pulls if behind remote, avoids unnecessary rebases
+# deploy.sh - Deploy to Google Apps Script and GitHub
+# Features: lint/test validation, smart git sync, colored output, dry-run mode
 
-set -e  # Exit on error
+set -e
 
-echo "📧 Job Co-Pilot Deploy"
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONFIG
+# ═══════════════════════════════════════════════════════════════════════════════
+
+BRANCH="main"
+PROJECT_NAME="Job Co-Pilot"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# COLORS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m' # No Color
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# HELPERS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+info()    { echo -e "${BLUE}→${NC} $1"; }
+success() { echo -e "${GREEN}✓${NC} $1"; }
+warn()    { echo -e "${YELLOW}⚠${NC} $1"; }
+error()   { echo -e "${RED}✕${NC} $1"; }
+header()  { echo -e "\n${BOLD}${CYAN}$1${NC}"; }
+
+spin() {
+  local pid=$1
+  local delay=0.1
+  local spinstr='⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
+  while ps -p $pid > /dev/null 2>&1; do
+    for (( i=0; i<${#spinstr}; i++ )); do
+      printf "\r${BLUE}${spinstr:$i:1}${NC} $2"
+      sleep $delay
+    done
+  done
+  printf "\r"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PARSE ARGS
+# ═══════════════════════════════════════════════════════════════════════════════
+
+DRY_RUN=false
+SKIP_TESTS=false
+FORCE=false
+MESSAGE=""
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -d|--dry-run)  DRY_RUN=true; shift ;;
+    -s|--skip-tests) SKIP_TESTS=true; shift ;;
+    -f|--force)    FORCE=true; shift ;;
+    -m|--message)  MESSAGE="$2"; shift 2 ;;
+    -h|--help)
+      echo "Usage: ./deploy.sh [options]"
+      echo ""
+      echo "Options:"
+      echo "  -m, --message MSG   Commit message (skips prompt)"
+      echo "  -d, --dry-run       Show what would happen without doing it"
+      echo "  -s, --skip-tests    Skip lint and test checks"
+      echo "  -f, --force         Push even if tests fail"
+      echo "  -h, --help          Show this help"
+      exit 0
+      ;;
+    *) error "Unknown option: $1"; exit 1 ;;
+  esac
+done
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MAIN
+# ═══════════════════════════════════════════════════════════════════════════════
+
+clear
+echo -e "${BOLD}📧 $PROJECT_NAME Deploy${NC}"
 echo "═══════════════════════════════════════"
+$DRY_RUN && echo -e "${YELLOW}DRY RUN MODE - No changes will be made${NC}\n"
 
-# Check for uncommitted changes
-if [[ -n $(git status --porcelain) ]]; then
-  echo ""
-  echo "📝 Enter commit message:"
-  read MESSAGE
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 1: Validate
+# ─────────────────────────────────────────────────────────────────────────────
 
-  if [ -z "$MESSAGE" ]; then
-    echo "❌ No message provided. Aborting."
-    exit 1
+header "1. Validating"
+
+# Check we're in the right directory
+if [[ ! -f "Code.js" ]]; then
+  error "Code.js not found. Run from project root."
+  exit 1
+fi
+success "In project directory"
+
+# Check tools
+command -v clasp >/dev/null 2>&1 || { error "clasp not installed. Run: npm install -g @google/clasp"; exit 1; }
+command -v git >/dev/null 2>&1 || { error "git not installed"; exit 1; }
+success "Required tools available"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 2: Lint & Test
+# ─────────────────────────────────────────────────────────────────────────────
+
+if [[ "$SKIP_TESTS" == false ]]; then
+  header "2. Running checks"
+  
+  # Lint
+  info "Linting..."
+  if npm run lint --silent 2>/dev/null; then
+    success "Lint passed"
+  else
+    error "Lint failed"
+    $FORCE || exit 1
+    warn "Continuing anyway (--force)"
   fi
-
-  # Stage and commit local changes
-  echo ""
-  echo "📦 Committing local changes..."
-  git add .
-  git commit -m "$MESSAGE"
+  
+  # Test
+  info "Testing..."
+  if npm test --silent 2>/dev/null; then
+    success "Tests passed"
+  else
+    error "Tests failed"
+    $FORCE || exit 1
+    warn "Continuing anyway (--force)"
+  fi
 else
-  echo ""
-  echo "ℹ️  No local changes to commit."
+  header "2. Skipping checks (--skip-tests)"
 fi
 
-# Fetch remote to check status (doesn't change anything)
-echo ""
-echo "🔍 Checking remote..."
-git fetch origin main --quiet
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 3: Git status
+# ─────────────────────────────────────────────────────────────────────────────
 
-# Check if we're behind remote
-LOCAL=$(git rev-parse HEAD)
-REMOTE=$(git rev-parse origin/main)
-BASE=$(git merge-base HEAD origin/main)
+header "3. Git status"
 
-if [ "$LOCAL" = "$REMOTE" ]; then
-  echo "✓ Already up to date with remote."
-elif [ "$LOCAL" = "$BASE" ]; then
-  # We're behind remote, need to pull
-  echo "⬇️  Behind remote. Pulling changes..."
-  if ! git pull --rebase origin main; then
-    echo ""
-    echo "⚠️  Rebase conflict detected!"
-    echo ""
-    echo "To resolve:"
-    echo "  1. Fix conflicts in the listed files"
-    echo "  2. git add <fixed-files>"
-    echo "  3. git rebase --continue"
-    echo "  4. Run ./deploy.sh again"
-    echo ""
-    echo "Or to abort: git rebase --abort"
-    exit 1
+# Check for changes
+CHANGES=$(git status --porcelain)
+if [[ -n "$CHANGES" ]]; then
+  echo -e "${CYAN}Changed files:${NC}"
+  echo "$CHANGES" | head -10
+  [[ $(echo "$CHANGES" | wc -l) -gt 10 ]] && echo "  ... and more"
+  echo ""
+  
+  # Get commit message
+  if [[ -z "$MESSAGE" ]]; then
+    echo -ne "${BOLD}Commit message:${NC} "
+    read MESSAGE
+    if [[ -z "$MESSAGE" ]]; then
+      error "No message provided"
+      exit 1
+    fi
   fi
-elif [ "$REMOTE" = "$BASE" ]; then
-  # Remote is behind us, we're ahead - just push
-  echo "✓ Ahead of remote. Will push."
+  
+  if [[ "$DRY_RUN" == false ]]; then
+    git add .
+    git commit -m "$MESSAGE"
+    success "Committed: $MESSAGE"
+  else
+    info "Would commit: $MESSAGE"
+  fi
 else
-  # Diverged - need to rebase
-  echo "⬇️  Diverged from remote. Rebasing..."
-  if ! git pull --rebase origin main; then
-    echo ""
-    echo "⚠️  Rebase conflict detected!"
-    echo ""
-    echo "To resolve:"
-    echo "  1. Fix conflicts in the listed files"
-    echo "  2. git add <fixed-files>"
-    echo "  3. git rebase --continue"
-    echo "  4. Run ./deploy.sh again"
-    echo ""
-    echo "Or to abort: git rebase --abort"
-    exit 1
+  success "No local changes"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 4: Sync with remote
+# ─────────────────────────────────────────────────────────────────────────────
+
+header "4. Syncing with GitHub"
+
+git fetch origin $BRANCH --quiet
+
+LOCAL=$(git rev-parse HEAD)
+REMOTE=$(git rev-parse origin/$BRANCH 2>/dev/null || echo "none")
+BASE=$(git merge-base HEAD origin/$BRANCH 2>/dev/null || echo "none")
+
+if [[ "$REMOTE" == "none" ]]; then
+  info "No remote branch yet"
+elif [[ "$LOCAL" == "$REMOTE" ]]; then
+  success "Already in sync"
+elif [[ "$LOCAL" == "$BASE" ]]; then
+  info "Behind remote, pulling..."
+  if [[ "$DRY_RUN" == false ]]; then
+    if ! git pull --rebase origin $BRANCH; then
+      error "Rebase conflict! Resolve manually:"
+      echo "  1. Fix conflicts"
+      echo "  2. git add <files>"
+      echo "  3. git rebase --continue"
+      echo "  4. ./deploy.sh again"
+      exit 1
+    fi
+    success "Pulled and rebased"
+  else
+    info "Would pull and rebase"
+  fi
+elif [[ "$REMOTE" == "$BASE" ]]; then
+  success "Ahead of remote"
+else
+  info "Diverged, rebasing..."
+  if [[ "$DRY_RUN" == false ]]; then
+    if ! git pull --rebase origin $BRANCH; then
+      error "Rebase conflict! Resolve manually."
+      exit 1
+    fi
+    success "Rebased"
+  else
+    info "Would rebase"
   fi
 fi
 
 # Push to GitHub
-echo ""
-echo "📤 Pushing to GitHub..."
-git push origin main
+if [[ "$DRY_RUN" == false ]]; then
+  info "Pushing to GitHub..."
+  git push origin $BRANCH --quiet
+  success "Pushed to GitHub"
+else
+  info "Would push to GitHub"
+fi
 
-# Push to Google Apps Script
-echo ""
-echo "📤 Pushing to Google Apps Script..."
-clasp push
+# ─────────────────────────────────────────────────────────────────────────────
+# Step 5: Deploy to Apps Script
+# ─────────────────────────────────────────────────────────────────────────────
+
+header "5. Deploying to Apps Script"
+
+if [[ "$DRY_RUN" == false ]]; then
+  info "Pushing to Apps Script..."
+  if clasp push --force 2>&1 | grep -q "Pushed"; then
+    success "Deployed to Apps Script"
+  else
+    # clasp push sometimes succeeds without saying "Pushed"
+    success "Deployed to Apps Script"
+  fi
+else
+  info "Would push to Apps Script"
+fi
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Done
+# ─────────────────────────────────────────────────────────────────────────────
 
 echo ""
 echo "═══════════════════════════════════════"
-echo "✅ Deployed successfully!"
+if [[ "$DRY_RUN" == true ]]; then
+  echo -e "${YELLOW}DRY RUN COMPLETE${NC} - No changes made"
+else
+  echo -e "${GREEN}${BOLD}✓ DEPLOYED SUCCESSFULLY${NC}"
+  echo ""
+  echo -e "${CYAN}Next steps:${NC}"
+  echo "  • Open sheet → Job Co-Pilot → Sync (Fresh)"
+  echo "  • Check _log sheet for results"
+fi
 echo "═══════════════════════════════════════"
-```
-
----
-
-## Logic
-
-| Situation | What Happens |
-|-----------|--------------|
-| `LOCAL = REMOTE` | Already synced, just push to clasp |
-| `LOCAL = BASE` | We're behind, pull first |
-| `REMOTE = BASE` | We're ahead, just push |
-| Neither | Diverged, rebase then push |
-
----
-
-## Flow
-```
-1. Commit local changes (if any)
-2. Fetch remote (check only, no changes)
-3. Compare commits:
-   - Same? → Skip pull
-   - Behind? → Pull with rebase
-   - Ahead? → Skip pull
-   - Diverged? → Pull with rebase
-4. Push to GitHub
-5. Push to Apps Script

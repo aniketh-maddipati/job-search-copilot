@@ -1,15 +1,19 @@
 {
   "name": "job-search-copilot",
   "version": "1.2.0",
+  "type": "module",
   "description": "AI-powered job search triage in Google Sheets",
   "scripts": {
     "test": "jest",
     "test:watch": "jest --watch",
-    "deploy": "./deploy.sh"
+    "deploy": "./deploy.sh",
+  "lint": "eslint Code.js",
+  "check": "npm run lint && npm test"
   },
   "author": "Aniketh Maddipati",
   "license": "MIT",
   "devDependencies": {
+    "eslint": "^9.39.3",
     "jest": "^29.7.0"
   }
 }
