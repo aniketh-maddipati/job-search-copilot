@@ -558,6 +558,7 @@
         <div class="step-icon pending">○</div>
         <div class="step-content">
           <div class="step-title">Sending emails</div>
+          <div class="step-subtitle hidden" id="step6Subtitle" style="font-size:10px;color:var(--mute);margin-top:4px;">This may take a minute...</div>
         </div>
       </div>
     </div>
@@ -854,8 +855,10 @@ function startSetup() {
 }
   
 function onSuccess(res) {
-  // Complete all steps
-  ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'].forEach(s => setStepState(s, 'done'));  
+  // Stop animation and complete all steps
+  clearInterval(progressInterval);
+  ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'].forEach(s => setStepState(s, 'done'));
+  
   setTimeout(() => {
     showView('viewSuccess');
     
@@ -927,19 +930,26 @@ function onSuccess(res) {
   // Animate progress while waiting
   let progressInterval;
   function startProgressAnimation() {
-    const steps = ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'];
-    let current = 0;
-    
-    progressInterval = setInterval(() => {
-      if (current > 0) setStepState(steps[current - 1], 'done');
-      if (current < steps.length) {
-        setStepState(steps[current], 'running');
-        current++;
-      } else {
-        clearInterval(progressInterval);
+  const steps = ['step1', 'step2', 'step3', 'step4', 'step5', 'step6'];
+  let current = 0;
+  
+  progressInterval = setInterval(() => {
+    if (current > 0 && current < steps.length) {
+      setStepState(steps[current - 1], 'done');
+    }
+    if (current < steps.length) {
+      setStepState(steps[current], 'running');
+      current++;
+      
+      // Show subtitle on last step
+      if (current === steps.length) {
+        document.getElementById('step6Subtitle').classList.remove('hidden');
       }
-    }, 1500);
-  }
+    } else {
+      clearInterval(progressInterval);
+    }
+  }, 1500);
+}
   
   // Start animation when progress view is shown
   const observer = new MutationObserver(() => {
