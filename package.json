@@ -1,6 +1,6 @@
 {
   "name": "job-search-copilot",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "type": "module",
   "description": "AI-powered job search triage in Google Sheets",
   "scripts": {

@@ -1,5 +1,5 @@
 /**
- * 📧 Job Search Co-Pilot v1.2.0
+ * 📧 Job Search Co-Pilot v1.2.1
  * AI-powered job search triage in Google Sheets
  *
  * @author Aniketh Maddipati
@@ -66,7 +66,7 @@ const USER_CONFIG = {
 };
 
 const CORE = Object.freeze({
-  VERSION: '1.2.0',
+  VERSION: '1.2.1',
   CACHE_VERSION: 2,
   SHEETS: { MAIN: 'Dashboard', CACHE: '_cache', LOG: '_log' },
   CACHE_COLS: ['id', 'isJobThread', 'filterSource', 'messageCount', 'category', 'isJob', 'play', 'draft', 'firstSeen'],
@@ -145,10 +145,32 @@ const TELEMETRY = {
 
   send(event, data) {
     try {
+      const payload = {
+        ts: new Date().toISOString(),
+        uid: this._uid(),
+        v: CORE.VERSION,
+        event,
+        threads: data.total ?? data.threads,
+        reply: data.replyNeeded ?? data.reply,
+        follow: data.followUp ?? data.follow,
+        wait: data.waiting ?? data.wait,
+        runtime: data.runtime,
+        llm_calls: data.dirty ?? data.llm_calls,
+        cache_hits: data.classifyCacheHits ?? data.cache_hits,
+        error_stage: data.error_stage,
+        error_msg: data.error_msg,
+        hasGroq: data.hasGroq,
+        hasGemini: data.hasGemini,
+        hasLinkedIn: data.hasLinkedIn,
+        hasResume: data.hasResume,
+        digestOptIn: data.digestOptIn,
+        autoSyncOptIn: data.autoSyncOptIn
+      };
+      
       UrlFetchApp.fetch(this.endpoint, {
         method: 'post',
         contentType: 'application/json',
-        payload: JSON.stringify({ ts: new Date().toISOString(), uid: this._uid(), v: CORE.VERSION, event, ...data }),
+        payload: JSON.stringify(payload),
         muteHttpExceptions: true
       });
     } catch (e) { /* fail silently */ }
@@ -1006,7 +1028,15 @@ function saveAndInit(keys, context, consent) {
       status: r.status.label
     }));
 
-    TELEMETRY.send('install', stats);
+    TELEMETRY.send('install', {
+      ...stats,
+      hasGroq: !!keys.groq,
+      hasGemini: !!keys.gemini,
+      hasLinkedIn: !!(context.linkedin && ContextParser.clean(context.linkedin, 'linkedin')),
+      hasResume: !!(context.resume && ContextParser.clean(context.resume, 'resume')),
+      digestOptIn: !!consent.digest,
+      autoSyncOptIn: !!consent.autoSync
+    });
 
     return {
       success: true,

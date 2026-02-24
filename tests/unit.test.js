@@ -1,5 +1,5 @@
 /**
- * Local Unit Tests for Job Co-Pilot v1.2.0
+ * Local Unit Tests for Job Co-Pilot v1.2.1
  *
  * Run: npm test
  */
